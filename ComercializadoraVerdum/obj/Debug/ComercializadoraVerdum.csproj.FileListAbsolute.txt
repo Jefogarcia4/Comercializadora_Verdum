@@ -1,0 +1,11 @@
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\bin\Debug\ComercializadoraVerdum.exe.config
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\bin\Debug\ComercializadoraVerdum.exe
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\bin\Debug\ComercializadoraVerdum.pdb
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.FrmHome.resources
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.Properties.Resources.resources
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.csproj.GenerateResource.cache
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.csproj.CoreCompileInputs.cache
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.exe
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.pdb
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.csproj.AssemblyReference.cache
+D:\Jefferson_Projects\ComercializadoraVerdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.Historial.resources

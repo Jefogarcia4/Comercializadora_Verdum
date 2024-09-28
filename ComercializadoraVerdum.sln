@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33130.400
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComercializadoraVerdum", "ComercializadoraVerdum\ComercializadoraVerdum.csproj", "{9DBEDFA1-C9E3-436D-84D9-142BABCB1B7F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9DBEDFA1-C9E3-436D-84D9-142BABCB1B7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DBEDFA1-C9E3-436D-84D9-142BABCB1B7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DBEDFA1-C9E3-436D-84D9-142BABCB1B7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DBEDFA1-C9E3-436D-84D9-142BABCB1B7F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4969673B-8C67-4274-BAA5-C2F0B266DE97}
+	EndGlobalSection
+EndGlobal
