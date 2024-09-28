@@ -24,7 +24,7 @@ namespace ComercializadoraVerdum
 
         private void InitializeDatabaseConnection()
         {
-            // Cambia la ruta de acceso a tu archivo de base de datos Access.
+            
             string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=D:\Verdum.accdb";
             connection = new OleDbConnection(connectionString);
         }
