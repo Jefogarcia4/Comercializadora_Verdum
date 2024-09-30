@@ -82,6 +82,7 @@ namespace ComercializadoraVerdum
 
         private void FrmHome_Load(object sender, EventArgs e)
         {
+            //Prueba
             txtCliente.Focus();
             lblFecha.Text = DateTime.Now.ToShortDateString();
             dataGridView1.Enabled = false; // Inhabilitar el DataGridView
