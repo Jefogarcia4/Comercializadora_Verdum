@@ -18,6 +18,8 @@ namespace ComercializadoraVerdum
         {
            
             InitializeComponent();
+            this.Load += FrmHome_Load;
+            txtCliente.KeyDown += txtCliente_KeyDown;
             InitializeDatabaseConnection();
             LoadProductsIntoComboBox();
             InitializeDataGridView();
@@ -39,7 +41,6 @@ namespace ComercializadoraVerdum
                 OleDbDataAdapter adapter = new OleDbDataAdapter(command);
                 DataTable productsTable = new DataTable();
                 adapter.Fill(productsTable);
-                dataGridView1.Columns.Add("Cliente", "Cliente");
                 DataGridViewComboBoxColumn comboBoxColumn = new DataGridViewComboBoxColumn
                 {
                     Name = "Producto",
@@ -81,7 +82,10 @@ namespace ComercializadoraVerdum
 
         private void FrmHome_Load(object sender, EventArgs e)
         {
+            txtCliente.Focus();
             lblFecha.Text = DateTime.Now.ToShortDateString();
+            dataGridView1.Enabled = false; // Inhabilitar el DataGridView
+            btnLimpiar.Visible = false; // Ocultar el botón Limpiar
         }
 
 
@@ -139,20 +143,18 @@ namespace ComercializadoraVerdum
                     bool isSaved = row.Cells["IsSaved"].Value != null && Convert.ToBoolean(row.Cells["IsSaved"].Value);
                     if (!isSaved)
                     {
-                        string cliente = row.Cells["Cliente"].Value.ToString();
                         int canastas = Convert.ToInt32(row.Cells["Canastas"].Value);
                         double pesoBruto = Convert.ToDouble(row.Cells["PesoBruto"].Value);
                         int idProducto = Convert.ToInt32(row.Cells["Producto"].Value);
                         int cantidad = Convert.ToInt32(row.Cells["Cantidad"].Value);
                         decimal precio = Convert.ToDecimal(row.Cells["Precio"].Value);
                         decimal total = Convert.ToDecimal(row.Cells["Total"].Value);
-                        string query = "INSERT INTO Ventas (canastas, pesobruto,fecha,cliente,productoid,cantidad, precio, total) VALUES (?, ?, ?, ?,?,?,?,?)";
+                        string query = "INSERT INTO Ventas (canastas, pesobruto,fecha,productoid,cantidad, precio, total) VALUES (?, ?, ?, ?,?,?,?,?)";
 
                         OleDbCommand command = new OleDbCommand(query, connection);
                         command.Parameters.AddWithValue("@canastas", canastas);
                         command.Parameters.AddWithValue("@pesobruto", pesoBruto);
                         command.Parameters.AddWithValue("@fecha", DateTime.Now.ToShortDateString());
-                        command.Parameters.AddWithValue("@cliente", cliente);
                         command.Parameters.AddWithValue("@productoid", idProducto);
                         command.Parameters.AddWithValue("@cantidad", cantidad);
                         command.Parameters.AddWithValue("@precio", precio);
@@ -192,5 +194,104 @@ namespace ComercializadoraVerdum
             Historial formHistorial = new Historial();
             formHistorial.Show();
         }
+
+        private void txtCliente_Leave(object sender, EventArgs e)
+        {
+            txtCliente.Enabled = false;
+            btnLimpiar.Visible = true;
+            dataGridView1.Enabled = true;
+            ValidarCliente(txtCliente.Text);
+        }
+
+        private void btnLimpiar_Click(object sender, EventArgs e)
+        {
+            txtCliente.Clear();
+            txtCliente.Enabled = true;
+            btnLimpiar.Visible = false;
+            dataGridView1.Enabled = false;
+            dataGridView1.DataSource = null;
+            lblDescuento.Text = $"Descuento: ";
+
+        }
+
+        private void txtCliente_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab)
+            {
+                e.SuppressKeyPress = true; 
+            }
+        }
+
+        private void ValidarCliente(string nombreCliente)
+        {
+            decimal valorMostrar = 0; 
+
+            try
+            {
+                if (connection.State == ConnectionState.Closed)
+                {
+                    connection.Open();
+                }
+
+                string query = "SELECT SaldoFavor, SaldoDeuda FROM clientes WHERE NombreCliente = @NombreCliente";
+                using (OleDbCommand command = new OleDbCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@NombreCliente", nombreCliente);
+
+                    using (OleDbDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read()) 
+                        {
+                            decimal saldoFavor = reader.GetDecimal(0);
+                            decimal saldoDeuda = reader.GetDecimal(1);
+                            if (saldoFavor != 0)
+                            {
+                                valorMostrar = saldoFavor; 
+                            }
+                            else if (saldoDeuda != 0)
+                            {
+                                valorMostrar = -saldoDeuda;
+                            }
+                        }
+                        else 
+                        {
+                            CrearCliente(nombreCliente);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    connection.Close(); 
+                }
+            }
+
+            lblDescuento.Text = $"Descuento: $ {valorMostrar.ToString("N0")}";
+        }
+
+
+        private void CrearCliente(string nombreCliente)
+        {
+            try
+            {
+                string insertQuery = "INSERT INTO Clientes (NombreCliente, SaldoFavor, SaldoDeuda) VALUES (@NombreCliente, 0, 0)";
+                using (OleDbCommand command = new OleDbCommand(insertQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@NombreCliente", nombreCliente);
+                    command.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+        }
+
     }
 }
