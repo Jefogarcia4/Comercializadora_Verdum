@@ -133,6 +133,7 @@ namespace ComercializadoraVerdum
 
         private void SaveButton_Click(object sender, EventArgs e)
         {
+            //Prueba
             try
             {
                 connection.Open();
