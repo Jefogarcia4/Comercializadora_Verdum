@@ -133,7 +133,7 @@ namespace ComercializadoraVerdum
 
         private void SaveButton_Click(object sender, EventArgs e)
         {
-            //Prueba
+            //Prueba de guardar en github
             try
             {
                 connection.Open();
