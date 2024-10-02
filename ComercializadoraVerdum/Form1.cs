@@ -38,6 +38,7 @@ namespace ComercializadoraVerdum
             {
                 connection.Open();
                 OleDbCommand command = new OleDbCommand("SELECT id, nombre FROM Productos", connection);
+                dataGridView1.Columns.Add("Canasta P. KG", "Canasta P. KG");
                 OleDbDataAdapter adapter = new OleDbDataAdapter(command);
                 DataTable productsTable = new DataTable();
                 adapter.Fill(productsTable);
@@ -64,12 +65,15 @@ namespace ComercializadoraVerdum
 
         private void InitializeDataGridView()
         {
+            int rowIndex = dataGridView1.Rows.Add();
+            DataGridViewRow newRow = dataGridView1.Rows[rowIndex];
+            newRow.Cells["Canasta P. KG"].Value = 1.7;   
             dataGridView1.Columns.Add("Precio", "Precio");
             dataGridView1.Columns.Add("Canastas", "Canastas");
             dataGridView1.Columns.Add("PesoBruto", "PesoBruto");
             dataGridView1.Columns.Add("Cantidad", "Cantidad");
-
             dataGridView1.Columns.Add("Total", "Total");
+
 
             DataGridViewTextBoxColumn isSavedColumn = new DataGridViewTextBoxColumn
             {
@@ -133,51 +137,85 @@ namespace ComercializadoraVerdum
 
         private void SaveButton_Click(object sender, EventArgs e)
         {
-            try
-            {
-                connection.Open();
 
-                foreach (DataGridViewRow row in dataGridView1.Rows)
+            if (string.IsNullOrWhiteSpace(txtCliente.Text) || string.IsNullOrWhiteSpace(txtAbona.Text))
+            {
+                MessageBox.Show("Por favor, complete los campos Nombre Cliente y Abona.", "Campos requeridos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                try
                 {
-                    if (row.IsNewRow) continue;
-                    bool isSaved = row.Cells["IsSaved"].Value != null && Convert.ToBoolean(row.Cells["IsSaved"].Value);
-                    if (!isSaved)
+                    connection.Open();
+
+                    decimal totalCompra = 0;
+                    int totalCanastas = 0;
+                    double totalPesoBruto = 0;
+
+                    foreach (DataGridViewRow row in dataGridView1.Rows)
                     {
-                        int canastas = Convert.ToInt32(row.Cells["Canastas"].Value);
-                        double pesoBruto = Convert.ToDouble(row.Cells["PesoBruto"].Value);
-                        int idProducto = Convert.ToInt32(row.Cells["Producto"].Value);
-                        int cantidad = Convert.ToInt32(row.Cells["Cantidad"].Value);
-                        decimal precio = Convert.ToDecimal(row.Cells["Precio"].Value);
-                        decimal total = Convert.ToDecimal(row.Cells["Total"].Value);
-                        string query = "INSERT INTO Ventas (canastas, pesobruto,fecha,productoid,cantidad, precio, total) VALUES (?, ?, ?, ?,?,?,?,?)";
+                        if (row.IsNewRow) continue;
+                        bool isSaved = row.Cells["IsSaved"].Value != null && Convert.ToBoolean(row.Cells["IsSaved"].Value);
+                        if (!isSaved)
+                        {
+                            int idProducto = Convert.ToInt32(row.Cells["Producto"].Value);
+                            decimal precio = Convert.ToDecimal(row.Cells["Precio"].Value);
+                            int canastas = Convert.ToInt32(row.Cells["Canastas"].Value);
+                            double pesoBruto = Convert.ToDouble(row.Cells["PesoBruto"].Value);
+                            int cantidad = Convert.ToInt32(row.Cells["Cantidad"].Value);
+                            decimal valortotal = Convert.ToDecimal(row.Cells["Total"].Value);
+                            string nombreCliente = txtCliente.Text;
+                            decimal abona = decimal.Parse(txtAbona.Text);
 
-                        OleDbCommand command = new OleDbCommand(query, connection);
-                        command.Parameters.AddWithValue("@canastas", canastas);
-                        command.Parameters.AddWithValue("@pesobruto", pesoBruto);
-                        command.Parameters.AddWithValue("@fecha", DateTime.Now.ToShortDateString());
-                        command.Parameters.AddWithValue("@productoid", idProducto);
-                        command.Parameters.AddWithValue("@cantidad", cantidad);
-                        command.Parameters.AddWithValue("@precio", precio);
-                        command.Parameters.AddWithValue("@total", total);
-                        command.ExecuteNonQuery();
+                            // Acumulando totales
+                            totalCompra += valortotal;
+                            totalCanastas += canastas;
+                            totalPesoBruto += pesoBruto;
 
-                        // Marcar la fila como guardada
-                        row.Cells["IsSaved"].Value = true;
+                            string query = "INSERT INTO DetalleVentas (productoid, precio, canastas, pesobruto, cantidad, valortotal) VALUES (?, ?, ?, ?, ?, ?)";
+
+                            OleDbCommand command = new OleDbCommand(query, connection);
+                            command.Parameters.AddWithValue("@productoid", idProducto);
+                            command.Parameters.AddWithValue("@precio", precio);
+                            command.Parameters.AddWithValue("@canastas", canastas);
+                            command.Parameters.AddWithValue("@pesobruto", pesoBruto);
+                            command.Parameters.AddWithValue("@cantidad", cantidad);
+                            command.Parameters.AddWithValue("@valortotal", valortotal);
+
+                            command.ExecuteNonQuery();
+
+                            row.Cells["IsSaved"].Value = true;
+                        }
                     }
-                    
+
+                    decimal descuento = decimal.Parse(lblDescuento.Text);
+                    decimal totalPagar = totalCompra - descuento;
+
+                    string insertVentaQuery = "INSERT INTO Ventas (nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalpagar) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    using (OleDbCommand ventaCommand = new OleDbCommand(insertVentaQuery, connection))
+                    {
+                        ventaCommand.Parameters.AddWithValue("@nombreCliente", txtCliente.Text);
+                        ventaCommand.Parameters.AddWithValue("@totalproductos", dataGridView1.Rows.Count - 1); // Total de productos guardados
+                        ventaCommand.Parameters.AddWithValue("@totalcanastas", totalCanastas);
+                        ventaCommand.Parameters.AddWithValue("@totalpesobruto", totalPesoBruto);
+                        ventaCommand.Parameters.AddWithValue("@totalcompra", totalCompra);
+                        ventaCommand.Parameters.AddWithValue("@descuento", descuento);
+                        ventaCommand.Parameters.AddWithValue("@totalpagar", totalPagar);
+
+                        ventaCommand.ExecuteNonQuery();
+                    }
+
+                    MessageBox.Show("Ventas guardadas exitosamente.");
                 }
-
-                MessageBox.Show("Ventas guardadas exitosamente.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error saving sales: " + ex.Message);
-            }
-            finally
-            {
-                connection.Close();
-            }
-
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error saving sales: " + ex.Message);
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }  
         }
 
         private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
@@ -293,5 +331,19 @@ namespace ComercializadoraVerdum
             }
         }
 
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dataGridView1_DefaultValuesNeeded(object sender, DataGridViewRowEventArgs e)
+        {
+            e.Row.Cells["Canasta P. KG"].Value = 1.7;
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
