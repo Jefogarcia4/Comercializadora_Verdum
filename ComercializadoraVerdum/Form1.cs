@@ -14,20 +14,63 @@ namespace ComercializadoraVerdum
     public partial class FrmHome : Form
     {
         private OleDbConnection connection;
+        private int consecutivo = 0;
+        private DateTime fechaActual;
         public FrmHome()
         {
            
             InitializeComponent();
+            fechaActual = DateTime.Now.Date;
             this.Load += FrmHome_Load;
             txtCliente.KeyDown += txtCliente_KeyDown;
+            fechaActual = DateTime.Now;
             InitializeDatabaseConnection();
             LoadProductsIntoComboBox();
             InitializeDataGridView();
+            if (CargarRegistrosDelDia())
+            {
+                GenerarNuevaFactura();
+            }
+            else
+            {
+                lblnumerofactura.Text = $"Número Factura: {fechaActual:yyyyMMdd}0001";
+            }
+            this.Shown += new EventHandler(FrmHome_Shown);
         }
+
+        private bool CargarRegistrosDelDia()
+        {
+
+            consecutivo = 0;
+            return consecutivo > 0;
+        }
+
+        private void GenerarNuevaFactura()
+        {
+            if (fechaActual.Date == DateTime.Now.Date)
+            {
+                string numeroActualTexto = lblnumerofactura.Text.Replace("Número Factura: ", "");
+
+                if (long.TryParse(numeroActualTexto, out long numeroActual))
+                {
+                    numeroActual++; 
+                    lblnumerofactura.Text = $"Número Factura: {numeroActual:D15}"; 
+                }
+                else
+                {
+                    MessageBox.Show("Error al convertir el número de factura actual.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                return;
+            }
+
+            fechaActual = DateTime.Now.Date;
+            lblnumerofactura.Text = $"Número Factura: {fechaActual:yyyyMMdd}0001";
+        }
+
 
         private void InitializeDatabaseConnection()
         {
-            // Cambia la ruta de acceso a tu archivo de base de datos Access.
             string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=D:\Verdum.accdb";
             connection = new OleDbConnection(connectionString);
         }
@@ -85,16 +128,12 @@ namespace ComercializadoraVerdum
         }
 
         private void FrmHome_Load(object sender, EventArgs e)
-        {
+        { 
+
             txtCliente.Focus();
-            lblFecha.Text = DateTime.Now.ToShortDateString();
-            dataGridView1.Enabled = false; // Inhabilitar el DataGridView
-            btnLimpiar.Visible = false; // Ocultar el botón Limpiar
+            dataGridView1.Enabled = false; 
+            btnLimpiar.Visible = false; 
         }
-
-
-
-
 
         private void CalculateQuantity(int rowIndex)
         {
@@ -104,11 +143,9 @@ namespace ComercializadoraVerdum
                 if (int.TryParse(row.Cells["Canastas"].Value.ToString(), out int canastas) &&
                     double.TryParse(row.Cells["PesoBruto"].Value.ToString(), out double pesoBruto))
                 {
-                    // Suponiendo que la cantidad se calcula como Canastas * Peso Bruto
                     double cantidad = pesoBruto - (canastas * 1.7);
                     row.Cells["Cantidad"].Value = cantidad;
 
-                    // Si la celda de Precio tiene un valor, calcular el total
                     if (double.TryParse(row.Cells["Precio"].Value?.ToString(), out double precio))
                     {
                         row.Cells["Total"].Value = cantidad * precio;
@@ -130,7 +167,7 @@ namespace ComercializadoraVerdum
                 }
             }
             
-            label4.Text = $"{Convert.ToDecimal(totalSum).ToString("C0")}";
+            label3.Text = $"Total: {Convert.ToDecimal(totalSum).ToString("C0")}";
         }
 
 
@@ -140,7 +177,7 @@ namespace ComercializadoraVerdum
 
             if (string.IsNullOrWhiteSpace(txtCliente.Text) || string.IsNullOrWhiteSpace(txtAbona.Text))
             {
-                MessageBox.Show("Por favor, complete los campos Nombre Cliente y Abona.", "Campos requeridos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Por favor, complete los campos Nombre Cliente y valor pagado.", "Campos requeridos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             else
             {
@@ -151,6 +188,50 @@ namespace ComercializadoraVerdum
                     decimal totalCompra = 0;
                     int totalCanastas = 0;
                     double totalPesoBruto = 0;
+                    string valor1Texto = label3.Text.Replace("Total: $ ", "").Replace(",", "");
+                    string valor2Texto = lblDescuento.Text.Replace("Descuento: $ ", "").Replace(",", "");
+                    string abonoTexto = txtAbona.Text.Replace(",", "");
+                    if (decimal.TryParse(valor1Texto, out decimal valor1) &&
+                    decimal.TryParse(valor2Texto, out decimal valor2) &&
+                    decimal.TryParse(abonoTexto, out decimal abono))
+                    {
+                        decimal total = Math.Abs(valor1 - valor2 - abono);
+                        if (abono < valor1)
+                        {
+                            total = valor1 - abono;
+                            MessageBox.Show($"El cliente: {txtCliente.Text} deja una deuda de: ${total:N0}", "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        else
+                        {
+                            MessageBox.Show($"Debe devolver al cliente {txtCliente.Text} un valor de: ${total:N0}", "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            total = valor1 - valor2 - abono; 
+                        }
+
+                       
+                    }
+                    else
+                    {
+                        MessageBox.Show("Por favor, ingrese valores válidos.");
+                    }
+
+
+                    decimal descuento = decimal.Parse(lblDescuento.Text);
+                    decimal totalPagar = totalCompra - descuento;
+
+                    string insertVentaQuery = "INSERT INTO Ventas (consecutivo, nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalpagar) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    using (OleDbCommand ventaCommand = new OleDbCommand(insertVentaQuery, connection))
+                    {
+                        ventaCommand.Parameters.AddWithValue("consecutivo", consecutivo);
+                        ventaCommand.Parameters.AddWithValue("@nombreCliente", txtCliente.Text);
+                        ventaCommand.Parameters.AddWithValue("@totalproductos", dataGridView1.Rows.Count - 1);
+                        ventaCommand.Parameters.AddWithValue("@totalcanastas", totalCanastas);
+                        ventaCommand.Parameters.AddWithValue("@totalpesobruto", totalPesoBruto);
+                        ventaCommand.Parameters.AddWithValue("@totalcompra", totalCompra);
+                        ventaCommand.Parameters.AddWithValue("@descuento", descuento);
+                        ventaCommand.Parameters.AddWithValue("@totalpagar", totalPagar);
+
+                        ventaCommand.ExecuteNonQuery();
+                    }
 
                     foreach (DataGridViewRow row in dataGridView1.Rows)
                     {
@@ -158,6 +239,7 @@ namespace ComercializadoraVerdum
                         bool isSaved = row.Cells["IsSaved"].Value != null && Convert.ToBoolean(row.Cells["IsSaved"].Value);
                         if (!isSaved)
                         {
+                            decimal pesocanastaKG = Convert.ToDecimal(row.Cells["Canasta P. KG"].Value);
                             int idProducto = Convert.ToInt32(row.Cells["Producto"].Value);
                             decimal precio = Convert.ToDecimal(row.Cells["Precio"].Value);
                             int canastas = Convert.ToInt32(row.Cells["Canastas"].Value);
@@ -167,7 +249,6 @@ namespace ComercializadoraVerdum
                             string nombreCliente = txtCliente.Text;
                             decimal abona = decimal.Parse(txtAbona.Text);
 
-                            // Acumulando totales
                             totalCompra += valortotal;
                             totalCanastas += canastas;
                             totalPesoBruto += pesoBruto;
@@ -188,23 +269,7 @@ namespace ComercializadoraVerdum
                         }
                     }
 
-                    decimal descuento = decimal.Parse(lblDescuento.Text);
-                    decimal totalPagar = totalCompra - descuento;
-
-                    string insertVentaQuery = "INSERT INTO Ventas (nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalpagar) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                    using (OleDbCommand ventaCommand = new OleDbCommand(insertVentaQuery, connection))
-                    {
-                        ventaCommand.Parameters.AddWithValue("@nombreCliente", txtCliente.Text);
-                        ventaCommand.Parameters.AddWithValue("@totalproductos", dataGridView1.Rows.Count - 1); // Total de productos guardados
-                        ventaCommand.Parameters.AddWithValue("@totalcanastas", totalCanastas);
-                        ventaCommand.Parameters.AddWithValue("@totalpesobruto", totalPesoBruto);
-                        ventaCommand.Parameters.AddWithValue("@totalcompra", totalCompra);
-                        ventaCommand.Parameters.AddWithValue("@descuento", descuento);
-                        ventaCommand.Parameters.AddWithValue("@totalpagar", totalPagar);
-
-                        ventaCommand.ExecuteNonQuery();
-                    }
-
+                    GenerarNuevaFactura();
                     MessageBox.Show("Ventas guardadas exitosamente.");
                 }
                 catch (Exception ex)
@@ -344,6 +409,14 @@ namespace ComercializadoraVerdum
         private void label1_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void FrmHome_Shown(object sender, EventArgs e)
+        {
+            this.BeginInvoke((MethodInvoker)delegate
+            {
+                txtCliente.Focus(); 
+            });
         }
     }
 }
