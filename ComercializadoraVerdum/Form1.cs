@@ -131,6 +131,10 @@ namespace ComercializadoraVerdum
         { 
 
             txtCliente.Focus();
+<<<<<<< HEAD
+=======
+            lblFecha.Text = DateTime.Now.ToShortDateString();
+>>>>>>> 817c74755b4c193018c0e6f16d6532a1e87ac2a7
             dataGridView1.Enabled = false; 
             btnLimpiar.Visible = false; 
         }
@@ -174,6 +178,13 @@ namespace ComercializadoraVerdum
 
         private void SaveButton_Click(object sender, EventArgs e)
         {
+<<<<<<< HEAD
+=======
+            //Prueba de guardar en github
+            try
+            {
+                connection.Open();
+>>>>>>> 817c74755b4c193018c0e6f16d6532a1e87ac2a7
 
             if (string.IsNullOrWhiteSpace(txtCliente.Text) || string.IsNullOrWhiteSpace(txtAbona.Text))
             {
