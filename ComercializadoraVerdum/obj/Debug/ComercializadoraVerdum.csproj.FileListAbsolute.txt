@@ -1,0 +1,11 @@
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\bin\Debug\ComercializadoraVerdum.exe.config
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\bin\Debug\ComercializadoraVerdum.exe
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\bin\Debug\ComercializadoraVerdum.pdb
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.csproj.AssemblyReference.cache
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.FrmHome.resources
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.Historial.resources
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.Properties.Resources.resources
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.csproj.GenerateResource.cache
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.csproj.CoreCompileInputs.cache
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.exe
+E:\Git_Projects\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.pdb
