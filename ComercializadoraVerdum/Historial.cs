@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Data.OleDb;
 using Microsoft.Extensions.Configuration;
 using System.IO;
+using System.Net;
 
 namespace ComercializadoraVerdum
 {
@@ -22,13 +23,15 @@ namespace ComercializadoraVerdum
             InitializeComponent();
             InitializeDatabaseConnection();
             InitializeDataGridView();
+            SetButtonImageFromUrl();
         }
 
         private void InitializeDatabaseConnection()
         {
+
             var builder = new ConfigurationBuilder()
-                                    .SetBasePath(Directory.GetCurrentDirectory())
-                                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                       .SetBasePath(Directory.GetCurrentDirectory())
+                       .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
             configuration = builder.Build();
 
@@ -38,15 +41,15 @@ namespace ComercializadoraVerdum
 
         private void InitializeDataGridView()
         {
-            dataGridView1.Columns.Add("VentaID", "ID Venta");
-            dataGridView1.Columns.Add("Canastas", "Canastas");
-            dataGridView1.Columns.Add("PesoBruto", "Peso Bruto");
             dataGridView1.Columns.Add("Fecha", "Fecha");
-            dataGridView1.Columns.Add("Cliente", "Cliente");
-            dataGridView1.Columns.Add("Producto", "Producto");
-            dataGridView1.Columns.Add("Cantidad", "Cantidad");
-            dataGridView1.Columns.Add("Precio", "Precio");
-            dataGridView1.Columns.Add("Total", "Total");
+            dataGridView1.Columns.Add("Consecutivo", "Consecutivo");
+            dataGridView1.Columns.Add("NombreCliente", "Nombre Cliente");
+            dataGridView1.Columns.Add("TotalProductos", "Total Productos");
+            dataGridView1.Columns.Add("TotalCanastas", "Total Canastas");
+            dataGridView1.Columns.Add("TotalPesoBruto", "Total Peso Bruto");
+            dataGridView1.Columns.Add("TotalCompra", "Total Compra");
+            dataGridView1.Columns.Add("Descuento", "Descuento");
+            dataGridView1.Columns.Add("TotalPagar", "Total Pagar");
 
             DataGridViewButtonColumn printButtonColumn = new DataGridViewButtonColumn
             {
@@ -56,14 +59,14 @@ namespace ComercializadoraVerdum
             };
             dataGridView1.Columns.Add(printButtonColumn);
 
+            ToolTip toolTip = new ToolTip();
+            toolTip.SetToolTip(btnVolver, "Cerrar y volver al formulario anterior");
+            toolTip.SetToolTip(btnRefrescar, "Refrescar información");
+            this.Controls.Add(btnRefrescar);
+            this.Controls.Add(btnVolver);
+
+
             dataGridView1.CellClick += DataGridView1_CellClick;
-
-            // Añadir controles de filtrado
-            DateTimePicker datePickerStart = new DateTimePicker { Name = "datePickerStart", Location = new System.Drawing.Point(10, 10) };
-           
-            TextBox txtCliente = new TextBox { Name = "txtCliente", Location = new System.Drawing.Point(300, 10) };
-            Button btnFiltrar = new Button { Name = "btnFiltrar", Text = "Filtrar", Location = new System.Drawing.Point(450, 10) };
-
             btnFiltrar.Click += BtnFiltrar_Click;
 
             this.Controls.Add(datePickerStart);
@@ -95,15 +98,15 @@ namespace ComercializadoraVerdum
                 foreach (DataRow row in ventasTable.Rows)
                 {
                     dataGridView1.Rows.Add(
-                        row["id"],
-                        row["canastas"],
-                        row["pesobruto"],
-                        Convert.ToDateTime(row["fecha"]).ToShortDateString(),
-                        row["cliente"],
-                        row["productoid"],
-                        row["cantidad"],
-                        row["precio"],
-                        row["total"]
+                        row["Fecha"] != DBNull.Value ? Convert.ToDateTime(row["Fecha"]).ToShortDateString() : "",
+                        row["Consecutivo"] != DBNull.Value ? row["Consecutivo"].ToString() : "",
+                        row["NombreCliente"] != DBNull.Value ? row["NombreCliente"].ToString() : "",
+                        row["TotalProductos"] != DBNull.Value ? row["TotalProductos"].ToString() : "0",
+                        row["TotalCanastas"] != DBNull.Value ? row["TotalCanastas"].ToString() : "0",
+                        row["TotalPesoBruto"] != DBNull.Value ? row["TotalPesoBruto"].ToString() : "0",
+                        row["TotalCompra"] != DBNull.Value ? row["TotalCompra"].ToString() : "0",
+                        row["Descuento"] != DBNull.Value ? row["Descuento"].ToString() : "0",
+                        row["TotalPagar"] != DBNull.Value ? row["TotalPagar"].ToString() : "0"
                     );
                 }
             }
@@ -119,26 +122,59 @@ namespace ComercializadoraVerdum
 
         private void BtnFiltrar_Click(object sender, EventArgs e)
         {
-            DateTimePicker datePickerStart = (DateTimePicker)this.Controls["datePickerStart"];
-            TextBox txtCliente = (TextBox)this.Controls["txtCliente"];
-
-            string filterQuery = "";
-
-            if (!string.IsNullOrEmpty(txtCliente.Text))
+            if (datePickerStart.Value == null)
             {
-                filterQuery += $"cliente LIKE '%{txtCliente.Text}%'";
+                MessageBox.Show("Por favor, seleccione una fecha.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
-
-            if (!string.IsNullOrEmpty(filterQuery))
+            if (string.IsNullOrWhiteSpace(txtCliente.Text))
             {
-                filterQuery += " AND ";
+                MessageBox.Show("Por favor, ingrese el nombre del cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
-            filterQuery += $"fecha = #{datePickerStart.Value.Date.ToShortDateString()}#";
-
-
+            DateTime selectedDate = datePickerStart.Value;
+            string cliente = txtCliente.Text;
+            string filterQuery = $"Fecha = #{selectedDate:MM-dd-yyyy}# AND NombreCliente = '{cliente}'";
             LoadData(filterQuery);
+
+        }
+
+        private void ConsultarDatos(DateTime fecha, string cliente)
+        {
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
+
+            using (OleDbConnection connection = new OleDbConnection(connectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    string query = "SELECT * FROM Ventas " +
+                                   "WHERE Fecha = @Fecha AND NombreCliente LIKE @Cliente";
+
+                    using (OleDbCommand command = new OleDbCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Fecha", fecha.Date);
+                        command.Parameters.AddWithValue("@Cliente", "%" + cliente + "%");
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(command);
+                        DataTable dataTable = new DataTable();
+                        adapter.Fill(dataTable);
+
+                        dataGridView1.DataSource = dataTable;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ocurrió un error al consultar la base de datos: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
         }
 
         private void DataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -148,24 +184,73 @@ namespace ComercializadoraVerdum
                 DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
 
                 // Obtener los datos de la fila seleccionada
-                string idVenta = row.Cells["VentaID"].Value.ToString();
-                string canastas = row.Cells["Canastas"].Value.ToString();
-                string pesoBruto = row.Cells["PesoBruto"].Value.ToString();
                 string fecha = row.Cells["Fecha"].Value.ToString();
-                string cliente = row.Cells["Cliente"].Value.ToString();
-                string producto = row.Cells["Producto"].Value.ToString();
-                string cantidad = row.Cells["Cantidad"].Value.ToString();
-                string precio = row.Cells["Precio"].Value.ToString();
-                string total = row.Cells["Total"].Value.ToString();
-
+                string consecutivo = row.Cells["Consecutivo"].Value.ToString();
+                string nombrecliente = row.Cells["NombreCliente"].Value.ToString();
+                string totalproductos = row.Cells["TotalProductos"].Value.ToString();
+                string totalcanastas = row.Cells["TotalCanastas"].Value.ToString();
+                string totalpesobruto = row.Cells["totalPesoBruto"].Value.ToString();
+                string totalcompra = row.Cells["totalCompra"].Value.ToString();
+                string descuento = row.Cells["Descuento"].Value.ToString();
+                string totalpagar = row.Cells["TotalPagar"].Value.ToString();
                 // Aquí puedes implementar la lógica para imprimir la información, por ejemplo, mostrar un MessageBox
-                MessageBox.Show($"Imprimir Venta\n\nID: {idVenta}\nCliente: {cliente}\nProducto: {producto}\nCantidad: {cantidad}\nPrecio: {precio}\nTotal: {total}", "Imprimir Venta");
+                //MessageBox.Show($"Imprimir Venta\n\nID: {idVenta}\nCliente: {cliente}\nProducto: {producto}\nCantidad: {cantidad}\nPrecio: {precio}\nTotal: {total}", "Imprimir Venta");
+            }
+        }
+
+        private void SetButtonImageFromUrl()
+        {
+            try
+            {
+                string imageUrl = "https://img.icons8.com/material-two-tone/16/refresh.png";
+                string back = "https://img.icons8.com/material-two-tone/16/return.png";
+
+                using (WebClient webClient = new WebClient())
+                {
+                    byte[] imageBytes = webClient.DownloadData(imageUrl);
+                    byte[] imageBack = webClient.DownloadData(back);
+
+                    using (var ms = new System.IO.MemoryStream(imageBytes))
+                    {
+                        Image image = Image.FromStream(ms);
+                        btnRefrescar.Image = image;
+                        btnRefrescar.ImageAlign = ContentAlignment.MiddleLeft;
+                    }
+
+                    using (var rt = new System.IO.MemoryStream(imageBack))
+                    {
+                        Image imageback = Image.FromStream(rt);
+                        btnVolver.Image = imageback;
+                        btnVolver.ImageAlign = ContentAlignment.MiddleLeft;
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ocurrió un error al descargar la imagen: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void Historial_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void btnRefrescar_Click(object sender, EventArgs e)
+        {
+            LoadData();
+            txtCliente.Text = "";
+            datePickerStart.Value = DateTime.Now;
+        }
+
+        private void btnVolver_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }
