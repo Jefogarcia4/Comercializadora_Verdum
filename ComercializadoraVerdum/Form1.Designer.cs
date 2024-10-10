@@ -198,7 +198,7 @@ namespace ComercializadoraVerdum
             this.ClientSize = new System.Drawing.Size(801, 399);
             this.Controls.Add(this.groupBox1);
             this.Name = "FrmHome";
-            this.Text = "Comercializadora Verdum";
+            this.Text = "Comercializadora Verdum - Registro de Ventas";
             this.Load += new System.EventHandler(this.FrmHome_Load);
             this.Shown += new System.EventHandler(this.FrmHome_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();

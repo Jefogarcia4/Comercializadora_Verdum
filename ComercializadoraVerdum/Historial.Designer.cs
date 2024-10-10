@@ -101,7 +101,7 @@ namespace ComercializadoraVerdum
             this.Controls.Add(this.datePickerStart);
             this.Controls.Add(this.dataGridView1);
             this.Name = "Historial";
-            this.Text = "Historial";
+            this.Text = "Comercializadora Verdum - Historial de Ventas";
             this.Load += new System.EventHandler(this.Historial_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
