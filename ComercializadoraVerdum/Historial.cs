@@ -200,8 +200,24 @@ namespace ComercializadoraVerdum
                 string descuento = row.Cells["Descuento"].Value.ToString();
                 string abona = row.Cells["TotalAbona"].Value.ToString();
                 string totalpagar = row.Cells["TotalPagar"].Value.ToString();
-                // Aquí puedes implementar la lógica para imprimir la información, por ejemplo, mostrar un MessageBox
-                //MessageBox.Show($"Imprimir Venta\n\nID: {idVenta}\nCliente: {cliente}\nProducto: {producto}\nCantidad: {cantidad}\nPrecio: {precio}\nTotal: {total}", "Imprimir Venta");
+                DateTime fechaActual = DateTime.Now;
+                string mensaje = $"                           COMERCIALIZADORA VERDUM                           " +
+                                 $"-------------------------------------------------------------------------------\n" +
+                                 $"Fecha Factura: {fecha}\n" +
+                                 $"Nombre Cliente: {nombrecliente}\n" +
+                                 $"Consecutivo: {consecutivo}\n" +
+                                 $"Total Productos: {totalproductos}\n" +
+                                 $"Descuento: {descuento}\n" +
+                                 $"Total Compra: {totalcompra}\n" +
+                                 $"Total Canastas: {totalcanastas} \n" +
+                                 $"Peso Bruto: {totalpesobruto}\n" +
+                                 $"Cuánto Abona: {abona}\n" +
+                                 $"Cuánto Paga: {totalpagar}\n" +
+                                 $"-------------------------------------------------------------------------------\n" +
+                                 $"        Fecha Generación Factura: {fechaActual}\n";
+
+                MessageBox.Show(mensaje, "Impresion Venta!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
             }
         }
 
@@ -258,6 +274,18 @@ namespace ComercializadoraVerdum
         private void btnVolver_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex <= 9)
+            {
+                MessageBox.Show("No se puede editar esta información.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else 
+            {
+                dataGridView1.CellClick += DataGridView1_CellClick;
+            }
         }
     }
 }
