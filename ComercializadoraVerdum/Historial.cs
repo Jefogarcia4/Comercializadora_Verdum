@@ -20,6 +20,7 @@ namespace ComercializadoraVerdum
         private IConfigurationRoot configuration;
         public Historial()
         {
+            this.Icon = new Icon("Icons/facturacion-color.ico");
             InitializeComponent();
             InitializeDatabaseConnection();
             InitializeDataGridView();

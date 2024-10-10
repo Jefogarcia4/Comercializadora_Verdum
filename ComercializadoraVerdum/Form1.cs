@@ -11,6 +11,8 @@ using System.Data.OleDb;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using System.IO;
+using System.Net;
+
 
 namespace ComercializadoraVerdum
 {
@@ -22,7 +24,7 @@ namespace ComercializadoraVerdum
         private IConfigurationRoot configuration;
         public FrmHome()
         {
-           
+
             InitializeComponent();
             fechaActual = DateTime.Now.Date;
             this.Load += FrmHome_Load;
@@ -32,7 +34,30 @@ namespace ComercializadoraVerdum
             LoadProductsIntoComboBox();
             InitializeDataGridView();
             SiguienteConsecutivo();
+            this.Icon = new Icon("Icons/facturacion-color.ico");
             this.Shown += new EventHandler(FrmHome_Shown);
+
+        }
+
+        private void IconoFormularioRegistroVentas()
+        {
+            try
+            {
+                string tempIconPath = Path.Combine(Path.GetTempPath(), "tempIcon.ico");
+                string url = "https://img.icons8.com/ios/50/receipt-dollar.png";
+                using (WebClient webClient = new WebClient())
+                {
+                    webClient.DownloadFile(url, tempIconPath);
+                }
+
+                this.Icon = new Icon(tempIconPath);
+
+                File.Delete(tempIconPath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al descargar o establecer el ícono: " + ex.Message);
+            }
         }
 
         private bool CargarRegistrosDelDia()
@@ -42,7 +67,7 @@ namespace ComercializadoraVerdum
             return consecutivo > 0;
         }
 
-        private void SiguienteConsecutivo() 
+        private void SiguienteConsecutivo()
         {
             try
             {
@@ -61,12 +86,12 @@ namespace ComercializadoraVerdum
                     if (result != null)
                     {
                         string ultimoConsecutivo = result.ToString();
-                        string numeroConsecutivoStr = ultimoConsecutivo.Substring(8); 
+                        string numeroConsecutivoStr = ultimoConsecutivo.Substring(8);
 
                         if (int.TryParse(numeroConsecutivoStr, out int numeroConsecutivo))
                         {
-                            numeroConsecutivo++; 
-                            nuevoConsecutivo = fechaActual + numeroConsecutivo.ToString("D5"); 
+                            numeroConsecutivo++;
+                            nuevoConsecutivo = fechaActual + numeroConsecutivo.ToString("D5");
                         }
                         else
                         {
@@ -99,8 +124,8 @@ namespace ComercializadoraVerdum
 
                 if (long.TryParse(numeroActualTexto, out long numeroActual))
                 {
-                    numeroActual++; 
-                    lblnumerofactura.Text = $"Número Factura: {numeroActual:D15}"; 
+                    numeroActual++;
+                    lblnumerofactura.Text = $"Número Factura: {numeroActual:D15}";
                 }
                 else
                 {
@@ -116,8 +141,8 @@ namespace ComercializadoraVerdum
         private void InitializeDatabaseConnection()
         {
             var builder = new ConfigurationBuilder()
-                        .SetBasePath(Directory.GetCurrentDirectory())
-                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
             configuration = builder.Build();
 
@@ -142,7 +167,7 @@ namespace ComercializadoraVerdum
                     DisplayMember = "nombre",
                     ValueMember = "id"
                 };
-
+                comboBoxColumn.Width = 124;
                 dataGridView1.Columns.Add(comboBoxColumn);
             }
             catch (Exception ex)
@@ -158,7 +183,7 @@ namespace ComercializadoraVerdum
         {
             int rowIndex = dataGridView1.Rows.Add();
             DataGridViewRow newRow = dataGridView1.Rows[rowIndex];
-            newRow.Cells["Canasta P. KG"].Value = 1.7;   
+            newRow.Cells["Canasta P. KG"].Value = 1.7;
             dataGridView1.Columns.Add("Precio", "Precio");
             dataGridView1.Columns.Add("Canastas", "Canastas");
             dataGridView1.Columns.Add("PesoBruto", "PesoBruto");
@@ -176,14 +201,14 @@ namespace ComercializadoraVerdum
         }
 
         private void FrmHome_Load(object sender, EventArgs e)
-        { 
+        {
 
             txtCliente.Focus();
             this.Size = new Size(820, 440);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
-            dataGridView1.Enabled = false; 
-            btnLimpiar.Visible = false; 
+            dataGridView1.Enabled = false;
+            btnLimpiar.Visible = false;
         }
 
         private void CalculateQuantity(int rowIndex)
@@ -218,7 +243,7 @@ namespace ComercializadoraVerdum
                     totalSum += total;
                 }
             }
-            
+
             label3.Text = $"Total: {Convert.ToDecimal(totalSum).ToString("C0")}";
         }
 
@@ -259,7 +284,7 @@ namespace ComercializadoraVerdum
 
                             total = totalValorCompra - abono;
 
-                            if (total > 0) 
+                            if (total > 0)
                             {
                                 decimal deuda = total;
                                 MessageBox.Show($"El cliente: {txtCliente.Text} deja una deuda de: ${deuda:N0}",
@@ -270,11 +295,10 @@ namespace ComercializadoraVerdum
                             {
                                 MessageBox.Show($"El cliente: {txtCliente.Text} pagó el total de la compra. Transacción exitosa.",
                                                 "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                // Guardar compra exitosa sin deuda
                             }
                             else // Total es negativo (saldo a favor)
                             {
-                                decimal saldoNuevoAFavor = -total; // Convertimos a positivo
+                                decimal saldoNuevoAFavor = -total;
                                 MessageBox.Show($"Debe devolver al cliente: {txtCliente.Text} un valor de: ${saldoNuevoAFavor:N0}",
                                                 "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                 ActualizarSaldoClienteAFavor(txtCliente.Text, totalValorCompra, saldoNuevoAFavor, abono);
@@ -316,8 +340,8 @@ namespace ComercializadoraVerdum
 
 
                         int ventaId;
-                        string insertVentaQuery = "INSERT INTO Ventas (consecutivo, nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalpagar) " +
-                                                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                        string insertVentaQuery = "INSERT INTO Ventas (consecutivo, nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalabona, totalpagar, fecha) " +
+                                                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
                         using (OleDbCommand ventaCommand = new OleDbCommand(insertVentaQuery, connection))
                         {
                             ventaCommand.Parameters.AddWithValue("consecutivo", nuevoConsecutivo);
@@ -327,7 +351,9 @@ namespace ComercializadoraVerdum
                             ventaCommand.Parameters.AddWithValue("@totalpesobruto", 0);
                             ventaCommand.Parameters.AddWithValue("@totalcompra", 0);
                             ventaCommand.Parameters.AddWithValue("@descuento", descuento);
+                            ventaCommand.Parameters.AddWithValue("@totalabona", abono);
                             ventaCommand.Parameters.AddWithValue("@totalpagar", total);
+                            ventaCommand.Parameters.AddWithValue("@fecha", DateTime.Now.Date);
 
                             ventaCommand.ExecuteNonQuery();
 
@@ -460,8 +486,8 @@ namespace ComercializadoraVerdum
                     {
                         if (reader.Read())
                         {
-                            saldoFavor = reader.GetDecimal(0);  
-                            saldoEnContra = reader.GetDecimal(1); 
+                            saldoFavor = reader.GetDecimal(0);
+                            saldoEnContra = reader.GetDecimal(1);
                         }
                     }
                 }
@@ -506,7 +532,7 @@ namespace ComercializadoraVerdum
                 MessageBox.Show("Error al actualizar la base de datos: " + ex.Message);
                 Application.Exit();
             }
-    }
+        }
         private void ActualizarSaldoClienteAFavor(string nombreCliente, decimal valorcomprahoy, decimal saldopendiente, decimal abona)
         {
 
@@ -545,7 +571,7 @@ namespace ComercializadoraVerdum
                 {
                     nuevoSaldoFavor += saldopendiente;
                 }
-                
+
                 string updateQuery = "UPDATE Clientes SET SaldoFavor = @nuevoSaldoFavor, SaldoDeuda = @nuevoSaldoDeuda WHERE NombreCliente = @nombreCliente";
                 using (OleDbCommand updateCommand = new OleDbCommand(updateQuery, connection))
                 {
@@ -608,14 +634,14 @@ namespace ComercializadoraVerdum
         {
             if (e.KeyCode == Keys.Tab)
             {
-                e.SuppressKeyPress = true; 
+                e.SuppressKeyPress = true;
             }
 
         }
 
         private void ValidarCliente(string nombreCliente)
         {
-            decimal valorMostrar = 0; 
+            decimal valorMostrar = 0;
 
             try
             {
@@ -631,20 +657,20 @@ namespace ComercializadoraVerdum
 
                     using (OleDbDataReader reader = command.ExecuteReader())
                     {
-                        if (reader.Read()) 
+                        if (reader.Read())
                         {
                             decimal saldoFavor = reader.GetDecimal(0);
                             decimal saldoDeuda = reader.GetDecimal(1);
                             if (saldoFavor != 0)
                             {
-                                valorMostrar = saldoFavor; 
+                                valorMostrar = saldoFavor;
                             }
                             else if (saldoDeuda != 0)
                             {
                                 valorMostrar = -saldoDeuda;
                             }
                         }
-                        else 
+                        else
                         {
                             CrearCliente(nombreCliente);
                         }
@@ -659,20 +685,12 @@ namespace ComercializadoraVerdum
             {
                 if (connection.State == ConnectionState.Open)
                 {
-                    connection.Close(); 
+                    connection.Close();
                 }
             }
 
             lblDescuento.Text = $"Descuento: $ {valorMostrar.ToString("N0")}";
-            //if (valorMostrar < 0)
-            //{
-            //    decimal total;
-            //    total = Math.Abs(valorMostrar);
-            //    MessageBox.Show($"El cliente: {txtCliente.Text} tiene actualmente una deuda de: ${total:N0}. Por favor ponerse al día para continuar.", "Advertencia.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            //    LimpiarCampos();
-            //}
         }
-
 
         private void CrearCliente(string nombreCliente)
         {
@@ -690,30 +708,25 @@ namespace ComercializadoraVerdum
                 MessageBox.Show("Error: " + ex.Message);
             }
         }
-
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
 
         }
-
         private void dataGridView1_DefaultValuesNeeded(object sender, DataGridViewRowEventArgs e)
         {
             e.Row.Cells["Canasta P. KG"].Value = 1.7;
         }
-
         private void label1_Click(object sender, EventArgs e)
         {
 
         }
-
         private void FrmHome_Shown(object sender, EventArgs e)
         {
             this.BeginInvoke((MethodInvoker)delegate
             {
-                txtCliente.Focus(); 
+                txtCliente.Focus();
             });
         }
-
         private void LimpiarCampos()
         {
             txtCliente.Text = string.Empty;
@@ -725,6 +738,5 @@ namespace ComercializadoraVerdum
             dataGridView1.Rows.Clear();
             SiguienteConsecutivo();
         }
-
     }
 }
