@@ -538,6 +538,7 @@ namespace ComercializadoraVerdum
 
             try
             {
+                //Valida si la conexión esta abierta
                 if (connection.State != System.Data.ConnectionState.Open)
                 {
                     connection.Open();

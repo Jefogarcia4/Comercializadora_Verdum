@@ -45,6 +45,8 @@ namespace ComercializadoraVerdum
 
         private void InitializeDataGridView()
         {
+            dataGridView1.Columns.Add("VentaId", "VentaId");
+            dataGridView1.Columns["VentaId"].Visible = false;
             dataGridView1.Columns.Add("Fecha", "Fecha");
             dataGridView1.Columns.Add("Consecutivo", "Consecutivo");
             dataGridView1.Columns.Add("NombreCliente", "Nombre Cliente");
@@ -63,6 +65,15 @@ namespace ComercializadoraVerdum
                 UseColumnTextForButtonValue = true
             };
             dataGridView1.Columns.Add(printButtonColumn);
+
+            DataGridViewButtonColumn printDetalleCompra = new DataGridViewButtonColumn
+            {
+                Name = "Detalle Venta",
+                Text = "Detalle Venta",
+                UseColumnTextForButtonValue = true
+            };
+            dataGridView1.Columns.Add(printDetalleCompra);
+
 
             ToolTip toolTip = new ToolTip();
             toolTip.SetToolTip(btnVolver, "Cerrar y volver al formulario anterior");
@@ -103,6 +114,7 @@ namespace ComercializadoraVerdum
                 foreach (DataRow row in ventasTable.Rows)
                 {
                     dataGridView1.Rows.Add(
+                        row["VentaId"] != DBNull.Value ? Convert.ToInt32(row["VentaId"]) : 0,
                         row["Fecha"] != DBNull.Value ? Convert.ToDateTime(row["Fecha"]).ToShortDateString() : "",
                         row["Consecutivo"] != DBNull.Value ? row["Consecutivo"].ToString() : "",
                         row["NombreCliente"] != DBNull.Value ? row["NombreCliente"].ToString() : "",
@@ -125,7 +137,6 @@ namespace ComercializadoraVerdum
                 connection.Close();
             }
         }
-
         private void BtnFiltrar_Click(object sender, EventArgs e)
         {
             if (datePickerStart.Value == null)
@@ -146,7 +157,6 @@ namespace ComercializadoraVerdum
             LoadData(filterQuery);
 
         }
-
         private void ConsultarDatos(DateTime fecha, string cliente)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -182,14 +192,12 @@ namespace ComercializadoraVerdum
                 }
             }
         }
-
         private void DataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Imprimir")
             {
                 DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
 
-                // Obtener los datos de la fila seleccionada
                 string fecha = row.Cells["Fecha"].Value.ToString();
                 string consecutivo = row.Cells["Consecutivo"].Value.ToString();
                 string nombrecliente = row.Cells["NombreCliente"].Value.ToString();
@@ -219,8 +227,72 @@ namespace ComercializadoraVerdum
                 MessageBox.Show(mensaje, "Impresion Venta!", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             }
+            if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Detalle Venta")
+            {
+                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+                int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
+                ObtenerDetallesVenta(ventaId);
+            }
         }
+        private void ObtenerDetallesVenta(int ventaId)
+        {
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
 
+            string query = @"
+            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.Canastas, dv.PesoBruto, dv.Cantidad, dv.ValorTotal
+            FROM DetalleVentas dv
+            INNER JOIN Productos p ON dv.ProductoId = p.Id
+            WHERE dv.VentaId = @VentaId";
+
+            using (OleDbConnection connection = new OleDbConnection(connectionString))
+            {
+                using (OleDbCommand command = new OleDbCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@VentaId", ventaId);
+
+                    try
+                    {
+                        connection.Open();
+                        using (OleDbDataReader reader = command.ExecuteReader())
+                        {
+                            DataTable dt = new DataTable();
+                            dt.Load(reader);
+                            MostrarDetalles(dt);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error: {ex.Message}");
+                    }
+                }
+            }
+        }
+        private void MostrarDetalles(DataTable dt)
+        {
+            if (dt.Rows.Count == 0)
+            {
+                MessageBox.Show("No se encontraron detalles para esta venta.", "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            string nombreComercializadora = "COMERCIALIZADORA VERDUM";
+
+            string mensaje = $"                       {nombreComercializadora}\n" +
+                     "-------------------------------------------------------------------------------\n";
+
+
+            foreach (DataRow row in dt.Rows)
+            {
+                mensaje += $"Nombre Producto: {row["Nombre"]}\n" +
+                           $"Precio: {row["Precio"]}\n" +
+                           $"Total Canastas: {row["Canastas"]}\n" +
+                           $"Peso Bruto: {row["PesoBruto"]}\n" +
+                           $"Cantidad: {row["Cantidad"]}\n" +
+                           $"Valor Total: {row["ValorTotal"]}\n" +
+                           "-------------------------------------------------------------------------------\n";
+            }
+
+            MessageBox.Show(mensaje, "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
         private void SetButtonImageFromUrl()
         {
             try
@@ -253,39 +325,35 @@ namespace ComercializadoraVerdum
                 MessageBox.Show("Ocurrió un error al descargar la imagen: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         private void Historial_Load(object sender, EventArgs e)
         {
 
         }
-
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
 
         }
-
         private void btnRefrescar_Click(object sender, EventArgs e)
         {
             LoadData();
             txtCliente.Text = "";
             datePickerStart.Value = DateTime.Now;
         }
-
         private void btnVolver_Click(object sender, EventArgs e)
         {
             this.Close();
         }
-
         private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
             if (e.RowIndex >= 0 && e.ColumnIndex <= 9)
             {
                 MessageBox.Show("No se puede editar esta información.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            else 
+            if (e.RowIndex >= 0 && (e.ColumnIndex == 10 || e.ColumnIndex == 11))
             {
                 dataGridView1.CellClick += DataGridView1_CellClick;
-            }
+                
+            }  
         }
     }
 }
