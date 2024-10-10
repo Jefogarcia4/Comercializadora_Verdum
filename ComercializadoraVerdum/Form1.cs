@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.OleDb;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
+using System.IO;
 
 namespace ComercializadoraVerdum
 {
@@ -17,6 +19,7 @@ namespace ComercializadoraVerdum
         private OleDbConnection connection;
         private int consecutivo = 0;
         private DateTime fechaActual;
+        private IConfigurationRoot configuration;
         public FrmHome()
         {
            
@@ -112,8 +115,13 @@ namespace ComercializadoraVerdum
         }
         private void InitializeDatabaseConnection()
         {
-            string pathDB = Properties.Settings.Default.PathDB;
-            string connectionString = $@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={pathDB}:\Verdum.accdb";
+            var builder = new ConfigurationBuilder()
+                        .SetBasePath(Directory.GetCurrentDirectory())
+                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+            configuration = builder.Build();
+
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
             connection = new OleDbConnection(connectionString);
         }
         private void LoadProductsIntoComboBox()

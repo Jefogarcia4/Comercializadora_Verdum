@@ -8,13 +8,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.OleDb;
+using Microsoft.Extensions.Configuration;
+using System.IO;
 
 namespace ComercializadoraVerdum
 {
     public partial class Historial : Form
     {
         private OleDbConnection connection;
-
+        private IConfigurationRoot configuration;
         public Historial()
         {
             InitializeComponent();
@@ -24,8 +26,13 @@ namespace ComercializadoraVerdum
 
         private void InitializeDatabaseConnection()
         {
-            
-            string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=D:\Verdum.accdb";
+            var builder = new ConfigurationBuilder()
+                                    .SetBasePath(Directory.GetCurrentDirectory())
+                                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+            configuration = builder.Build();
+
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
             connection = new OleDbConnection(connectionString);
         }
 
@@ -154,6 +161,11 @@ namespace ComercializadoraVerdum
                 // Aquí puedes implementar la lógica para imprimir la información, por ejemplo, mostrar un MessageBox
                 MessageBox.Show($"Imprimir Venta\n\nID: {idVenta}\nCliente: {cliente}\nProducto: {producto}\nCantidad: {cantidad}\nPrecio: {precio}\nTotal: {total}", "Imprimir Venta");
             }
+        }
+
+        private void Historial_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
