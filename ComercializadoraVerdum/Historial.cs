@@ -21,6 +21,9 @@ namespace ComercializadoraVerdum
         public Historial()
         {
             this.Icon = new Icon("Icons/facturacion-color.ico");
+            this.Width = 927;
+            this.Height = 489;
+            this.MinimumSize = new Size(927, 489);
             InitializeComponent();
             InitializeDatabaseConnection();
             InitializeDataGridView();
@@ -50,6 +53,7 @@ namespace ComercializadoraVerdum
             dataGridView1.Columns.Add("TotalPesoBruto", "Total Peso Bruto");
             dataGridView1.Columns.Add("TotalCompra", "Total Compra");
             dataGridView1.Columns.Add("Descuento", "Descuento");
+            dataGridView1.Columns.Add("TotalAbona", "TotalAbona");
             dataGridView1.Columns.Add("TotalPagar", "Total Pagar");
 
             DataGridViewButtonColumn printButtonColumn = new DataGridViewButtonColumn
@@ -107,6 +111,7 @@ namespace ComercializadoraVerdum
                         row["TotalPesoBruto"] != DBNull.Value ? row["TotalPesoBruto"].ToString() : "0",
                         row["TotalCompra"] != DBNull.Value ? row["TotalCompra"].ToString() : "0",
                         row["Descuento"] != DBNull.Value ? row["Descuento"].ToString() : "0",
+                        row["TotalAbona"] != DBNull.Value ? row["TotalAbona"].ToString() : "0",
                         row["TotalPagar"] != DBNull.Value ? row["TotalPagar"].ToString() : "0"
                     );
                 }
@@ -193,6 +198,7 @@ namespace ComercializadoraVerdum
                 string totalpesobruto = row.Cells["totalPesoBruto"].Value.ToString();
                 string totalcompra = row.Cells["totalCompra"].Value.ToString();
                 string descuento = row.Cells["Descuento"].Value.ToString();
+                string abona = row.Cells["TotalAbona"].Value.ToString();
                 string totalpagar = row.Cells["TotalPagar"].Value.ToString();
                 // Aquí puedes implementar la lógica para imprimir la información, por ejemplo, mostrar un MessageBox
                 //MessageBox.Show($"Imprimir Venta\n\nID: {idVenta}\nCliente: {cliente}\nProducto: {producto}\nCantidad: {cantidad}\nPrecio: {precio}\nTotal: {total}", "Imprimir Venta");

@@ -29,22 +29,14 @@ namespace ComercializadoraVerdum
         /// </summary>
         private void InitializeComponent()
         {
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.datePickerStart = new System.Windows.Forms.DateTimePicker();
             this.btnFiltrar = new System.Windows.Forms.Button();
             this.btnRefrescar = new System.Windows.Forms.Button();
             this.btnVolver = new System.Windows.Forms.Button();
             this.txtCliente = new System.Windows.Forms.TextBox();
+            this.dataGridView1 = new System.Windows.Forms.DataGridView();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
-            // 
-            // dataGridView1
-            // 
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(12, 35);
-            this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(887, 403);
-            this.dataGridView1.TabIndex = 0;
             // 
             // datePickerStart
             // 
@@ -89,17 +81,25 @@ namespace ComercializadoraVerdum
             this.txtCliente.Size = new System.Drawing.Size(233, 23);
             this.txtCliente.TabIndex = 5;
             // 
+            // dataGridView1
+            // 
+            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.Location = new System.Drawing.Point(12, 35);
+            this.dataGridView1.Name = "dataGridView1";
+            this.dataGridView1.Size = new System.Drawing.Size(1061, 503);
+            this.dataGridView1.TabIndex = 0;
+            // 
             // Historial
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(911, 450);
+            this.ClientSize = new System.Drawing.Size(1080, 550);
+            this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.txtCliente);
             this.Controls.Add(this.btnVolver);
             this.Controls.Add(this.btnRefrescar);
             this.Controls.Add(this.btnFiltrar);
             this.Controls.Add(this.datePickerStart);
-            this.Controls.Add(this.dataGridView1);
             this.Name = "Historial";
             this.Text = "Comercializadora Verdum - Historial de Ventas";
             this.Load += new System.EventHandler(this.Historial_Load);
@@ -110,12 +110,11 @@ namespace ComercializadoraVerdum
         }
 
         #endregion
-
-        private System.Windows.Forms.DataGridView dataGridView1;
         private System.Windows.Forms.DateTimePicker datePickerStart;
         private System.Windows.Forms.Button btnFiltrar;
         private System.Windows.Forms.Button btnRefrescar;
         private System.Windows.Forms.Button btnVolver;
         private System.Windows.Forms.TextBox txtCliente;
+        private System.Windows.Forms.DataGridView dataGridView1;
     }
 }
