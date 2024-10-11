@@ -20,10 +20,7 @@ namespace ComercializadoraVerdum
         private IConfigurationRoot configuration;
         public Historial()
         {
-            this.Icon = new Icon("Icons/facturacion-color.ico");
-            this.Width = 927;
-            this.Height = 489;
-            this.MinimumSize = new Size(927, 489);
+            this.Icon = new Icon("Icons/icono-factura-final.ico");
             InitializeComponent();
             InitializeDatabaseConnection();
             InitializeDataGridView();
@@ -42,7 +39,6 @@ namespace ComercializadoraVerdum
             string connectionString = configuration.GetConnectionString("DefaultConnection");
             connection = new OleDbConnection(connectionString);
         }
-
         private void InitializeDataGridView()
         {
             dataGridView1.Columns.Add("VentaId", "VentaId");
@@ -81,10 +77,8 @@ namespace ComercializadoraVerdum
             this.Controls.Add(btnRefrescar);
             this.Controls.Add(btnVolver);
 
-
-            dataGridView1.CellClick += DataGridView1_CellClick;
             btnFiltrar.Click += BtnFiltrar_Click;
-
+            dataGridView1.CellClick += DataGridView1_CellClick;
             this.Controls.Add(datePickerStart);
             this.Controls.Add(txtCliente);
             this.Controls.Add(btnFiltrar);
@@ -92,7 +86,6 @@ namespace ComercializadoraVerdum
 
             LoadData();
         }
-
         private void LoadData(string filterQuery = "")
         {
             try
@@ -103,6 +96,7 @@ namespace ComercializadoraVerdum
                 if (!string.IsNullOrEmpty(filterQuery))
                 {
                     query += " WHERE " + filterQuery;
+                    query += " ORDER BY Fecha";
                 }
 
                 OleDbDataAdapter adapter = new OleDbDataAdapter(query, connection);
@@ -141,13 +135,13 @@ namespace ComercializadoraVerdum
         {
             if (datePickerStart.Value == null)
             {
-                MessageBox.Show("Por favor, seleccione una fecha.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Por favor, seleccione una Fecha.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(txtCliente.Text))
             {
-                MessageBox.Show("Por favor, ingrese el nombre del cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Por favor, ingrese el nombre del Cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -194,54 +188,60 @@ namespace ComercializadoraVerdum
         }
         private void DataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Imprimir")
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
             {
-                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+                if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Imprimir")
+                {
+                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
 
-                string fecha = row.Cells["Fecha"].Value.ToString();
-                string consecutivo = row.Cells["Consecutivo"].Value.ToString();
-                string nombrecliente = row.Cells["NombreCliente"].Value.ToString();
-                string totalproductos = row.Cells["TotalProductos"].Value.ToString();
-                string totalcanastas = row.Cells["TotalCanastas"].Value.ToString();
-                string totalpesobruto = row.Cells["totalPesoBruto"].Value.ToString();
-                string totalcompra = row.Cells["totalCompra"].Value.ToString();
-                string descuento = row.Cells["Descuento"].Value.ToString();
-                string abona = row.Cells["TotalAbona"].Value.ToString();
-                string totalpagar = row.Cells["TotalPagar"].Value.ToString();
-                DateTime fechaActual = DateTime.Now;
-                string mensaje = $"                           COMERCIALIZADORA VERDUM                           " +
-                                 $"-------------------------------------------------------------------------------\n" +
-                                 $"Fecha Factura: {fecha}\n" +
-                                 $"Nombre Cliente: {nombrecliente}\n" +
-                                 $"Consecutivo: {consecutivo}\n" +
-                                 $"Total Productos: {totalproductos}\n" +
-                                 $"Descuento: {descuento}\n" +
-                                 $"Total Compra: {totalcompra}\n" +
-                                 $"Total Canastas: {totalcanastas} \n" +
-                                 $"Peso Bruto: {totalpesobruto}\n" +
-                                 $"Cuánto Abona: {abona}\n" +
-                                 $"Cuánto Paga: {totalpagar}\n" +
-                                 $"-------------------------------------------------------------------------------\n" +
-                                 $"        Fecha Generación Factura: {fechaActual}\n";
+                    string fecha = row.Cells["Fecha"].Value.ToString();
+                    string consecutivo = row.Cells["Consecutivo"].Value.ToString();
+                    string nombrecliente = row.Cells["NombreCliente"].Value.ToString();
+                    string totalproductos = row.Cells["TotalProductos"].Value.ToString();
+                    string totalcanastas = row.Cells["TotalCanastas"].Value.ToString();
+                    string totalpesobruto = row.Cells["totalPesoBruto"].Value.ToString();
+                    string totalcompra = row.Cells["totalCompra"].Value.ToString();
+                    string descuento = row.Cells["Descuento"].Value.ToString();
+                    string abona = row.Cells["TotalAbona"].Value.ToString();
+                    string totalpagar = row.Cells["TotalPagar"].Value.ToString();
+                    DateTime fechaActual = DateTime.Now;
+                    string mensaje = $"                           COMERCIALIZADORA VERDUM                           " +
+                                     $"-------------------------------------------------------------------------------\n" +
+                                     $"Fecha Factura: {fecha}\n" +
+                                     $"Nombre Cliente: {nombrecliente}\n" +
+                                     $"Consecutivo: {consecutivo}\n" +
+                                     $"Total Productos: {totalproductos}\n" +
+                                     $"Descuento: {descuento}\n" +
+                                     $"Total Compra: {totalcompra}\n" +
+                                     $"Total Canastas: {totalcanastas} \n" +
+                                     $"Peso Bruto: {totalpesobruto}\n" +
+                                     $"Cuánto Abona: {abona}\n" +
+                                     $"Cuánto Paga: {totalpagar}\n" +
+                                     $"-------------------------------------------------------------------------------\n" +
+                                     $"        Fecha de Impresión: {fechaActual}\n";
 
-                MessageBox.Show(mensaje, "Impresion Venta!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(mensaje, "Impresion Venta!", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
+                }
+                if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Detalle Venta")
+                {
+                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+                    int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
+                    ObtenerDetallesVenta(ventaId);
+                }
             }
-            if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Detalle Venta")
-            {
-                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
-                int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
-                ObtenerDetallesVenta(ventaId);
-            }
+            
+            
         }
         private void ObtenerDetallesVenta(int ventaId)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection");
 
             string query = @"
-            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.Canastas, dv.PesoBruto, dv.Cantidad, dv.ValorTotal
+            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.Canastas, dv.PesoBruto, dv.Cantidad, dv.ValorTotal, cl.SaldoFavor, cl.SaldoDeuda
             FROM DetalleVentas dv
             INNER JOIN Productos p ON dv.ProductoId = p.Id
+            INNER JOIN Clientes cl ON dv.NombreCliente = cl.NombreCliente
             WHERE dv.VentaId = @VentaId";
 
             using (OleDbConnection connection = new OleDbConnection(connectionString))
@@ -327,7 +327,9 @@ namespace ComercializadoraVerdum
         }
         private void Historial_Load(object sender, EventArgs e)
         {
-
+            this.Size = new Size(1096, 589);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
         }
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
@@ -345,15 +347,13 @@ namespace ComercializadoraVerdum
         }
         private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
-            if (e.RowIndex >= 0 && e.ColumnIndex <= 9)
+            if (e.RowIndex >= 0)
             {
-                MessageBox.Show("No se puede editar esta información.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (e.ColumnIndex <= 10)
+                {
+                    MessageBox.Show("Solo se permite Imprimir o ver el Detalle de una Venta.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
             }
-            if (e.RowIndex >= 0 && (e.ColumnIndex == 10 || e.ColumnIndex == 11))
-            {
-                dataGridView1.CellClick += DataGridView1_CellClick;
-                
-            }  
         }
     }
 }

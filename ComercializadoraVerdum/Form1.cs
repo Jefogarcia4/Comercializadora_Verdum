@@ -34,7 +34,7 @@ namespace ComercializadoraVerdum
             LoadProductsIntoComboBox();
             InitializeDataGridView();
             SiguienteConsecutivo();
-            this.Icon = new Icon("Icons/facturacion-color.ico");
+            this.Icon = new Icon("Icons/icono-factura-final.ico");
             this.Shown += new EventHandler(FrmHome_Shown);
 
         }
