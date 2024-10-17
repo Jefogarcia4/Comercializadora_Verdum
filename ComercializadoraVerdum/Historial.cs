@@ -239,16 +239,17 @@ namespace ComercializadoraVerdum
 
             string query = @"
             SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.Canastas, dv.PesoBruto, dv.Cantidad, dv.ValorTotal, cl.SaldoFavor, cl.SaldoDeuda
-            FROM DetalleVentas dv
-            INNER JOIN Productos p ON dv.ProductoId = p.Id
-            INNER JOIN Clientes cl ON dv.NombreCliente = cl.NombreCliente
-            WHERE dv.VentaId = @VentaId";
+            FROM ((DetalleVentas dv
+            INNER JOIN Productos p ON dv.ProductoId = p.Id)
+            INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
+            INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
+            WHERE dv.VentaId = ?";
 
             using (OleDbConnection connection = new OleDbConnection(connectionString))
             {
                 using (OleDbCommand command = new OleDbCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@VentaId", ventaId);
+                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
 
                     try
                     {
@@ -257,6 +258,7 @@ namespace ComercializadoraVerdum
                         {
                             DataTable dt = new DataTable();
                             dt.Load(reader);
+
                             MostrarDetalles(dt);
                         }
                     }
@@ -267,6 +269,7 @@ namespace ComercializadoraVerdum
                 }
             }
         }
+
         private void MostrarDetalles(DataTable dt)
         {
             if (dt.Rows.Count == 0)
