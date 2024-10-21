@@ -21,6 +21,8 @@ namespace ComercializadoraVerdum
         private IConfigurationRoot configuration;
         private PrintDocument printDocument = new PrintDocument();
         private PrintPreviewDialog printPreviewDialog = new PrintPreviewDialog();
+        private string _consecutivo, _fecha, _nombreCliente, _totalvalorventa, _totalpeso;
+        private List<DetalleVenta> _detalleventas;
         public Historial()
         {
             this.Icon = new Icon("Icons/icono-factura-final.ico");
@@ -197,35 +199,11 @@ namespace ComercializadoraVerdum
                 if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Imprimir")
                 {
                     DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
-                    printPreviewDialog.ShowDialog();
-                    //string fecha = row.Cells["Fecha"].Value.ToString();
-                    //string consecutivo = row.Cells["Consecutivo"].Value.ToString();
-                    //string nombrecliente = row.Cells["NombreCliente"].Value.ToString();
-                    //string totalproductos = row.Cells["TotalProductos"].Value.ToString();
-                    //string totalcanastas = row.Cells["TotalCanastas"].Value.ToString();
-                    //string totalpesobruto = row.Cells["totalPesoBruto"].Value.ToString();
-                    //string totalcompra = row.Cells["totalCompra"].Value.ToString();
-                    //string descuento = row.Cells["Descuento"].Value.ToString();
-                    //string abona = row.Cells["TotalAbona"].Value.ToString();
-                    //string totalpagar = row.Cells["TotalPagar"].Value.ToString();
-                    //DateTime fechaActual = DateTime.Now;
-                    //string mensaje = $"                           COMERCIALIZADORA VERDUM                           " +
-                    //                 $"-------------------------------------------------------------------------------\n" +
-                    //                 $"Fecha Factura: {fecha}\n" +
-                    //                 $"Nombre Cliente: {nombrecliente}\n" +
-                    //                 $"Consecutivo: {consecutivo}\n" +
-                    //                 $"Total Productos: {totalproductos}\n" +
-                    //                 $"Descuento: {descuento}\n" +
-                    //                 $"Total Compra: {totalcompra}\n" +
-                    //                 $"Total Canastas: {totalcanastas} \n" +
-                    //                 $"Peso Bruto: {totalpesobruto}\n" +
-                    //                 $"Cuánto Abona: {abona}\n" +
-                    //                 $"Cuánto Paga: {totalpagar}\n" +
-                    //                 $"-------------------------------------------------------------------------------\n" +
-                    //                 $"        Fecha de Impresión: {fechaActual}\n";
-
-                    //MessageBox.Show(mensaje, "Impresion Venta!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
+                    int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
+                    _fecha = row.Cells["Fecha"].Value.ToString();
+                    _consecutivo = row.Cells["Consecutivo"].Value.ToString();
+                    _nombreCliente = row.Cells["NombreCliente"].Value.ToString();
+                    ImprimirFacturaCompra(ventaId);
                 }
                 if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Detalle Venta")
                 {
@@ -233,10 +211,62 @@ namespace ComercializadoraVerdum
                     int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
                     ObtenerDetallesVenta(ventaId);
                 }
-            }
-            
-            
+            }      
         }
+
+        private void ImprimirFacturaCompra(int ventaId)
+        {
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
+            decimal totalVenta = 0;
+            decimal totalPeso = 0;
+            string query = @"
+            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.PesoBruto, dv.ValorTotal
+            FROM ((DetalleVentas dv
+            INNER JOIN Productos p ON dv.ProductoId = p.Id)
+            INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
+            INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
+            WHERE dv.VentaId = ?";
+
+            _detalleventas = new List<DetalleVenta>();
+
+            using (OleDbConnection connection = new OleDbConnection(connectionString))
+            {
+                using (OleDbCommand command = new OleDbCommand(query, connection))
+                {
+                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
+
+                    try
+                    {
+                        connection.Open();
+                        using (OleDbDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var detalle = new DetalleVenta
+                                {
+                                    DetalleVentaId = reader.GetInt32(0),
+                                    Nombre = reader.GetString(1),
+                                    Precio = reader.GetInt32(2),
+                                    PesoBruto = reader.GetInt32(3),
+                                    ValorTotal = reader.GetInt32(4)
+                                };
+                                _detalleventas.Add(detalle);
+                                totalVenta += detalle.ValorTotal;
+                                totalPeso += detalle.PesoBruto;
+                            }
+                            _totalvalorventa = $"${totalVenta.ToString("N0")}";
+                            _totalpeso = totalPeso.ToString("N0");
+                            printPreviewDialog.ShowDialog();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error: {ex.Message}");
+                    }
+                }
+            }
+        }
+
         private void ObtenerDetallesVenta(int ventaId)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -394,9 +424,9 @@ namespace ComercializadoraVerdum
             g.DrawString(direccion, new Font("Arial", 14, FontStyle.Bold), brush, direccionX, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString($"PREFACTURA No: 20241021113101", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
+            g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
             offsetY += 25;
-            g.DrawString($"FECHA: {DateTime.Now.ToString("dd/MM/yyyy")}", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
+            g.DrawString($"FECHA: {_fecha}", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
             offsetY += 50;
 
             string comercializadoraText = "COMERCIALIZADORA VERDUM SAS";
@@ -405,7 +435,7 @@ namespace ComercializadoraVerdum
             g.DrawString(comercializadoraText, new Font("Arial", 14, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString($"CLIENTE: Yesid Legum SAS", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
+            g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
             offsetY += 50;
 
             g.DrawString("PRODUCTO", new Font("Arial", 13, FontStyle.Bold), brush, startX, startY + offsetY);
@@ -414,20 +444,45 @@ namespace ComercializadoraVerdum
             g.DrawString("VALOR", new Font("Arial", 13, FontStyle.Bold), brush, startX + 600, startY + offsetY);
             offsetY += 25;
 
-            g.DrawString("Banano", font, brush, startX, startY + offsetY);
-            g.DrawString("18", font, brush, startX + 200, startY + offsetY);
-            g.DrawString("$820.00", font, brush, startX + 400, startY + offsetY);
-            g.DrawString("$1.800", font, brush, startX + 600, startY + offsetY);
+            foreach (var detalle in _detalleventas)
+            {
+                g.DrawString(detalle.Nombre, font, brush, startX, startY + offsetY);
+                g.DrawString(detalle.PesoBruto.ToString(), font, brush, startX + 200, startY + offsetY);
+                g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 400, startY + offsetY);
+                g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 600, startY + offsetY);
+                offsetY += 25;
+            }
             offsetY += 50;
 
             string totalLabel = "TOTAL VENTA:";
-            string totalValue = "$1.800";
-
             g.DrawString(totalLabel, new Font("Arial", 14, FontStyle.Bold), brush, startX, startY + offsetY);
-            int pageWidths = e.PageBounds.Width;
-            float totalValueWidth = g.MeasureString(totalValue, font).Width;
-            float totalValueX = pageWidths - totalValueWidth - 140;
-            g.DrawString(totalValue, font, brush, totalValueX, startY + offsetY);
+            float totalLabelWidth = g.MeasureString(totalLabel, new Font("Arial", 14, FontStyle.Bold)).Width;
+
+            string totalPesoValue = _totalpeso;
+            string totalVentaText = _totalvalorventa;
+
+            float spaceWidth = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 539;
+            float spaceWidth2 = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 173;
+            g.DrawString(totalPesoValue, font, brush, startX + totalLabelWidth + spaceWidth, startY + offsetY);
+            g.DrawString(totalVentaText, font, brush, startX + totalLabelWidth + spaceWidth2 + g.MeasureString(totalPesoValue, font).Width, startY + offsetY);
+
+
+            string fechaGeneracion = $"Fecha Generación Prefactura de Venta: {DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm:ss")}";
+            float fechaGeneracionWidth = g.MeasureString(fechaGeneracion, font).Width;
+            int pageWidthft = e.PageBounds.Width;
+            int pageHeight = e.PageBounds.Height;
+            float fechaGeneracionX = (pageWidthft - fechaGeneracionWidth) / 2;
+            float fechaGeneracionY = pageHeight - 50;
+            g.DrawString(fechaGeneracion, font, brush, fechaGeneracionX, fechaGeneracionY);
+        }
+
+        public class DetalleVenta
+        {
+            public int DetalleVentaId { get; set; }
+            public string Nombre { get; set; }
+            public int Precio { get; set; }
+            public int PesoBruto { get; set; }
+            public int ValorTotal { get; set; }
         }
     }
 }
