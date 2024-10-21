@@ -213,7 +213,6 @@ namespace ComercializadoraVerdum
                 }
             }      
         }
-
         private void ImprimirFacturaCompra(int ventaId)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -256,7 +255,8 @@ namespace ComercializadoraVerdum
                             }
                             _totalvalorventa = $"${totalVenta.ToString("N0")}";
                             _totalpeso = totalPeso.ToString("N0");
-                            printPreviewDialog.ShowDialog();
+                            ImprimirDocumento();
+                            //printPreviewDialog.ShowDialog();
                         }
                     }
                     catch (Exception ex)
@@ -266,7 +266,6 @@ namespace ComercializadoraVerdum
                 }
             }
         }
-
         private void ObtenerDetallesVenta(int ventaId)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -475,7 +474,44 @@ namespace ComercializadoraVerdum
             float fechaGeneracionY = pageHeight - 50;
             g.DrawString(fechaGeneracion, font, brush, fechaGeneracionX, fechaGeneracionY);
         }
+        private void ImprimirDocumento()
+        {
+            PrintDocument printDocument = new PrintDocument();
+            printDocument.PrintPage += PrintDocument_PrintPage;
 
+            PrintDialog printDialog = new PrintDialog
+            {
+                Document = printDocument,
+                UseEXDialog = true 
+            };
+
+            if (printDialog.ShowDialog() == DialogResult.OK)
+            {
+                if (printDialog.PrinterSettings.PrinterName == "Microsoft Print to PDF")
+                {
+                    SaveFileDialog saveFileDialog = new SaveFileDialog
+                    {
+                        Filter = "PDF Files (*.pdf)|*.pdf",
+                        Title = "Guardar como PDF",
+                        FileName = $"FacturaDeVenta_{DateTime.Now.ToString("yyyy-MM-dd")}"
+                    };
+
+                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        printDocument.PrinterSettings.PrinterName = "Microsoft Print to PDF";
+                        printDocument.PrinterSettings.PrintFileName = saveFileDialog.FileName;
+                        printDocument.PrinterSettings.PrintToFile = true;
+                        printDocument.Print();
+                    }
+                    MessageBox.Show("Se exportó correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    printDocument.Print();
+                    //printPreviewDialog.ShowDialog();
+                }
+            }
+        }
         public class DetalleVenta
         {
             public int DetalleVentaId { get; set; }
