@@ -25,7 +25,7 @@ namespace ComercializadoraVerdum
         private List<DetalleVenta> _detalleventas;
         public Historial()
         {
-            this.Icon = new Icon("Icons/icono-factura-final.ico");
+            this.Icon = new Icon("Images/icono-factura-final.ico");
             InitializeComponent();
             InitializeDatabaseConnection();
             InitializeDataGridView();
@@ -399,7 +399,7 @@ namespace ComercializadoraVerdum
 
             int pageWidth = e.PageBounds.Width;
             
-            Image logo = Image.FromFile("Icons/verdum-logo.png");
+            Image logo = Image.FromFile("Images/verdum-logo.png");
             if (logo != null)
             {
                 int logoWidth = 150;  

@@ -49,3 +49,5 @@ C:\Users\ybedoya\Documents\Comercializadora_Verdum\ComercializadoraVerdum\obj\De
 C:\Users\ybedoya\Documents\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\Comercia.A8165204.Up2Date
 C:\Users\ybedoya\Documents\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.exe
 C:\Users\ybedoya\Documents\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.pdb
+C:\Users\ybedoya\Documents\Comercializadora_Verdum\ComercializadoraVerdum\bin\Debug\Images\icono-factura-final.ico
+C:\Users\ybedoya\Documents\Comercializadora_Verdum\ComercializadoraVerdum\bin\Debug\Images\verdum-logo.png
