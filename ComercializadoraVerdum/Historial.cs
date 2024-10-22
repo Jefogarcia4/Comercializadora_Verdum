@@ -255,8 +255,10 @@ namespace ComercializadoraVerdum
                             }
                             _totalvalorventa = $"${totalVenta.ToString("N0")}";
                             _totalpeso = totalPeso.ToString("N0");
+                            printDocument.Print();
+                            MessageBox.Show("Se Imprimió correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             //ImprimirDocumento();
-                            printPreviewDialog.ShowDialog();
+                            //printPreviewDialog.ShowDialog();
                         }
                     }
                     catch (Exception ex)
@@ -506,7 +508,6 @@ namespace ComercializadoraVerdum
                 {
                     printDocument.Print();
                     MessageBox.Show("Se exportó correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    //printPreviewDialog.ShowDialog();
                 }
             }
         }
