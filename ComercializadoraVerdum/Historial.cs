@@ -255,8 +255,8 @@ namespace ComercializadoraVerdum
                             }
                             _totalvalorventa = $"${totalVenta.ToString("N0")}";
                             _totalpeso = totalPeso.ToString("N0");
-                            ImprimirDocumento();
-                            //printPreviewDialog.ShowDialog();
+                            //ImprimirDocumento();
+                            printPreviewDialog.ShowDialog();
                         }
                     }
                     catch (Exception ex)
@@ -405,74 +405,71 @@ namespace ComercializadoraVerdum
                 g.DrawImage(logo, logoX, startY, logoWidth, 150); 
                 offsetY += 160;  
             }
+
             string prefacturaVenta = "PREFECTURA DE VENTA";
-            float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 14, FontStyle.Bold)).Width;
+            float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 13, FontStyle.Bold)).Width;
             float prefacturaVentaX = (pageWidth - prefacturaVentaWidth) / 2;
-            g.DrawString(prefacturaVenta, new Font("Arial", 14, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);
+            g.DrawString(prefacturaVenta, new Font("Arial", 13, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);
             offsetY += 50;
 
             string medellinColombia = "MEDELLIN - COLOMBIA";
-            float medellinColombiaWidth = g.MeasureString(medellinColombia, new Font("Arial", 14, FontStyle.Bold)).Width;
+            float medellinColombiaWidth = g.MeasureString(medellinColombia, new Font("Arial", 13, FontStyle.Bold)).Width;
             float medellinColombiaX = (pageWidth - medellinColombiaWidth) / 2;
-            g.DrawString(medellinColombia, new Font("Arial", 14, FontStyle.Bold), brush, medellinColombiaX, startY + offsetY);
+            g.DrawString(medellinColombia, new Font("Arial", 13, FontStyle.Bold), brush, medellinColombiaX, startY + offsetY);
             offsetY += 50;
 
             string direccion = "DIRECCION: PLAZA MAYORISTA DE ANTIOQUIA";
-            float direccionWidth = g.MeasureString(direccion, new Font("Arial", 14, FontStyle.Bold)).Width;
+            float direccionWidth = g.MeasureString(direccion, new Font("Arial", 13, FontStyle.Bold)).Width;
             float direccionX = (pageWidth - direccionWidth) / 2;
-            g.DrawString(direccion, new Font("Arial", 14, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            g.DrawString(direccion, new Font("Arial", 13, FontStyle.Bold), brush, direccionX, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
+            g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 12, FontStyle.Bold), brush, startX + 160, startY + offsetY);
             offsetY += 25;
-            g.DrawString($"FECHA: {_fecha}", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
+
+            g.DrawString($"FECHA: {_fecha}", new Font("Arial", 12, FontStyle.Bold), brush, startX + 160, startY + offsetY);
             offsetY += 50;
+
 
             string comercializadoraText = "COMERCIALIZADORA VERDUM SAS";
-            float comercializadoraTextWidth = g.MeasureString(comercializadoraText, new Font("Arial", 14, FontStyle.Bold)).Width;
+            float comercializadoraTextWidth = g.MeasureString(comercializadoraText, new Font("Arial", 13, FontStyle.Bold)).Width;
             float comercializadoraTextX = (pageWidth - comercializadoraTextWidth) / 2;
-            g.DrawString(comercializadoraText, new Font("Arial", 14, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
+            g.DrawString(comercializadoraText, new Font("Arial", 13, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 12, FontStyle.Bold), brush, startX, startY + offsetY);
+            g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 12, FontStyle.Bold), brush, startX + 160, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString("PRODUCTO", new Font("Arial", 13, FontStyle.Bold), brush, startX, startY + offsetY);
-            g.DrawString("PESO", new Font("Arial", 13, FontStyle.Bold), brush, startX + 200, startY + offsetY);
-            g.DrawString("PRECIO", new Font("Arial", 13, FontStyle.Bold), brush, startX + 400, startY + offsetY);
-            g.DrawString("VALOR", new Font("Arial", 13, FontStyle.Bold), brush, startX + 600, startY + offsetY);
+            g.DrawString("PRODUCTO", new Font("Arial", 13, FontStyle.Bold), brush, startX + 160, startY + offsetY);
+            g.DrawString("PESO", new Font("Arial", 13, FontStyle.Bold), brush, startX + 290, startY + offsetY);
+            g.DrawString("PRECIO", new Font("Arial", 13, FontStyle.Bold), brush, startX + 360, startY + offsetY);
+            g.DrawString("VALOR", new Font("Arial", 13, FontStyle.Bold), brush, startX + 470, startY + offsetY);
             offsetY += 25;
 
             foreach (var detalle in _detalleventas)
             {
-                g.DrawString(detalle.Nombre, font, brush, startX, startY + offsetY);
-                g.DrawString(detalle.PesoBruto.ToString(), font, brush, startX + 200, startY + offsetY);
-                g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 400, startY + offsetY);
-                g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 600, startY + offsetY);
+                g.DrawString(detalle.Nombre, font, brush, startX + 160, startY + offsetY);
+                g.DrawString(detalle.PesoBruto.ToString(), font, brush, startX + 290, startY + offsetY);
+                g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 360, startY + offsetY);
+                g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 470, startY + offsetY);
                 offsetY += 25;
             }
             offsetY += 50;
 
             string totalLabel = "TOTAL VENTA:";
-            g.DrawString(totalLabel, new Font("Arial", 14, FontStyle.Bold), brush, startX, startY + offsetY);
+            g.DrawString(totalLabel, new Font("Arial", 12, FontStyle.Bold), brush, startX + 160, startY + offsetY);
             float totalLabelWidth = g.MeasureString(totalLabel, new Font("Arial", 14, FontStyle.Bold)).Width;
 
             string totalPesoValue = _totalpeso;
             string totalVentaText = _totalvalorventa;
 
-            float spaceWidth = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 539;
-            float spaceWidth2 = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 173;
+            float spaceWidth = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 440;
+            float spaceWidth2 = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 300;
             g.DrawString(totalPesoValue, font, brush, startX + totalLabelWidth + spaceWidth, startY + offsetY);
             g.DrawString(totalVentaText, font, brush, startX + totalLabelWidth + spaceWidth2 + g.MeasureString(totalPesoValue, font).Width, startY + offsetY);
+            offsetY += 50;
 
-
-            string fechaGeneracion = $"Fecha Generación Prefactura de Venta: {DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm:ss")}";
-            float fechaGeneracionWidth = g.MeasureString(fechaGeneracion, font).Width;
-            int pageWidthft = e.PageBounds.Width;
-            int pageHeight = e.PageBounds.Height;
-            float fechaGeneracionX = (pageWidthft - fechaGeneracionWidth) / 2;
-            float fechaGeneracionY = pageHeight - 50;
-            g.DrawString(fechaGeneracion, font, brush, fechaGeneracionX, fechaGeneracionY);
+            g.DrawString($"Fecha Generación Prefactura: {DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 10), brush, startX + 160, startY + offsetY);       
         }
         private void ImprimirDocumento()
         {
@@ -508,6 +505,7 @@ namespace ComercializadoraVerdum
                 else
                 {
                     printDocument.Print();
+                    MessageBox.Show("Se exportó correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     //printPreviewDialog.ShowDialog();
                 }
             }
