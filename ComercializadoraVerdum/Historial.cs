@@ -311,25 +311,57 @@ namespace ComercializadoraVerdum
                 MessageBox.Show("No se encontraron detalles para esta venta.", "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+
             string nombreComercializadora = "COMERCIALIZADORA VERDUM";
-
             string mensaje = $"                       {nombreComercializadora}\n" +
-                     "-------------------------------------------------------------------------------\n";
+                             "-------------------------------------------------------------------------------\n";
 
+            // Estructura para almacenar el resumen de productos
+            var resumenProductos = new Dictionary<string, List<(int Precio, int Peso, int ValorTotal)>>();
 
             foreach (DataRow row in dt.Rows)
             {
-                mensaje += $"Nombre Producto: {row["Nombre"]}\n" +
-                           $"Precio: {row["Precio"]}\n" +
+                string nombreProducto = row["Nombre"].ToString();
+                int precio = (int)row["Precio"];
+                int peso = (int)row["PesoBruto"];
+                int valorTotal = (int)row["ValorTotal"];
+                mensaje += $"Nombre Producto: {nombreProducto}\n" +
+                           $"Precio: {precio}\n" +
                            $"Total Canastas: {row["Canastas"]}\n" +
-                           $"Peso Bruto: {row["PesoBruto"]}\n" +
+                           $"Peso Bruto: {peso}\n" +
                            $"Cantidad: {row["Cantidad"]}\n" +
                            $"Valor Total: {row["ValorTotal"]}\n" +
                            "-------------------------------------------------------------------------------\n";
+
+                // Agrupar productos
+                if (!resumenProductos.ContainsKey(nombreProducto))
+                {
+                    resumenProductos[nombreProducto] = new List<(int Precio, int Peso, int ValorTotal)>();
+                }
+                resumenProductos[nombreProducto].Add((precio, peso,valorTotal));
+            }
+
+            // Agregar resumen al mensaje
+            mensaje += "\n";
+            mensaje += "                                      RESUMEN:\n";
+            mensaje += "-------------------------------------------------------------------------------\n";
+
+            foreach (var producto in resumenProductos)
+            {
+                string nombreProducto = producto.Key;
+                var detalles = producto.Value;
+
+                mensaje += $"Producto: {nombreProducto}\n";
+                foreach (var detalle in detalles)
+                {
+                    mensaje += $"Precio: {detalle.Precio}, Peso: {detalle.Peso}, Valor Total: {detalle.ValorTotal}\n";
+                }
+                mensaje += "-------------------------------------------------------------------------------\n";
             }
 
             MessageBox.Show(mensaje, "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
         private void SetButtonImageFromUrl()
         {
             try

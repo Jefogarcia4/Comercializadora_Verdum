@@ -154,11 +154,13 @@ namespace ComercializadoraVerdum
             try
             {
                 connection.Open();
-                OleDbCommand command = new OleDbCommand("SELECT id, nombre FROM Productos", connection);
+                OleDbCommand command = new OleDbCommand("SELECT id, nombre, precio FROM Productos", connection);
                 dataGridView1.Columns.Add("Canasta P. KG", "Canasta P. KG");
+
                 OleDbDataAdapter adapter = new OleDbDataAdapter(command);
                 DataTable productsTable = new DataTable();
                 adapter.Fill(productsTable);
+
                 DataGridViewComboBoxColumn comboBoxColumn = new DataGridViewComboBoxColumn
                 {
                     Name = "Producto",
@@ -169,6 +171,11 @@ namespace ComercializadoraVerdum
                 };
                 comboBoxColumn.Width = 124;
                 dataGridView1.Columns.Add(comboBoxColumn);
+
+                dataGridView1.Columns.Add("Precio", "Precio");
+
+                dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
+                dataGridView1.CurrentCellDirtyStateChanged += DataGridView1_CurrentCellDirtyStateChanged;
             }
             catch (Exception ex)
             {
@@ -179,12 +186,44 @@ namespace ComercializadoraVerdum
                 connection.Close();
             }
         }
+
+        private void DataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            if (dataGridView1.IsCurrentCellDirty)
+            {
+                dataGridView1.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        private decimal GetProductPriceById(int productId)
+        {
+            decimal price = 0;
+
+            try
+            {
+                connection.Open();
+                OleDbCommand command = new OleDbCommand("SELECT precio FROM Productos WHERE id = ?", connection);
+                command.Parameters.AddWithValue("?", productId);
+                price = (decimal)command.ExecuteScalar();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al obtener el precio: " + ex.Message);
+            }
+            finally
+            {
+                connection.Close();
+            }
+
+            return price;
+        }
+
         private void InitializeDataGridView()
         {
             int rowIndex = dataGridView1.Rows.Add();
             DataGridViewRow newRow = dataGridView1.Rows[rowIndex];
             newRow.Cells["Canasta P. KG"].Value = 1.7;
-            dataGridView1.Columns.Add("Precio", "Precio");
+            //dataGridView1.Columns.Add("Precio", "Precio");
             dataGridView1.Columns.Add("Canastas", "Canastas");
             dataGridView1.Columns.Add("PesoBruto", "PesoBruto");
             dataGridView1.Columns.Add("Cantidad", "Cantidad");
@@ -267,7 +306,7 @@ namespace ComercializadoraVerdum
                         double totalPesoBruto = 0;
                         decimal total = 0;
                         string valor1Texto = label3.Text.Replace("Total: $ ", "").Replace(",", "");
-                        string valor2Texto = lblDescuento.Text.Replace("Descuento: $ ", "").Replace(",", "");
+                        string valor2Texto = "0.00";
                         string abonoTexto = txtAbona.Text.Replace(",", "");
 
                         decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
@@ -604,6 +643,17 @@ namespace ComercializadoraVerdum
                 CalculateQuantity(e.RowIndex);
                 CalculateTotalSum();
             }
+
+            if (e.ColumnIndex == dataGridView1.Columns["Producto"].Index && e.RowIndex >= 0)
+            {
+                var productId = dataGridView1.Rows[e.RowIndex].Cells["Producto"].Value;
+
+                if (productId != null)
+                {
+                    decimal precio = GetProductPriceById(Convert.ToInt32(productId));
+                    dataGridView1.Rows[e.RowIndex].Cells["Precio"].Value = precio;
+                }
+            }
         }
 
         private void buttonHistorial_Click(object sender, EventArgs e)
@@ -627,7 +677,7 @@ namespace ComercializadoraVerdum
             btnLimpiar.Visible = false;
             dataGridView1.Enabled = false;
             dataGridView1.DataSource = null;
-            lblDescuento.Text = $"Descuento: ";
+            //lblDescuento.Text = $"Descuento: ";
 
         }
 
@@ -690,7 +740,7 @@ namespace ComercializadoraVerdum
                 }
             }
 
-            lblDescuento.Text = $"Descuento: $ {valorMostrar.ToString("N0")}";
+            //lblDescuento.Text = $"Descuento: $ {valorMostrar.ToString("N0")}";
         }
 
         private void CrearCliente(string nombreCliente)
@@ -735,7 +785,7 @@ namespace ComercializadoraVerdum
             btnLimpiar.Visible = false;
             txtCliente.Enabled = true;
             label3.Text = "Total: ";
-            lblDescuento.Text = "Descuento: ";
+            //lblDescuento.Text = "Descuento: ";
             dataGridView1.Rows.Clear();
             SiguienteConsecutivo();
         }

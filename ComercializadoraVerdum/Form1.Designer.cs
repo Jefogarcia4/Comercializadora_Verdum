@@ -36,7 +36,6 @@ namespace ComercializadoraVerdum
             this.label4 = new System.Windows.Forms.Label();
             this.lblNombreCliente = new System.Windows.Forms.Label();
             this.txtCliente = new System.Windows.Forms.TextBox();
-            this.lblDescuento = new System.Windows.Forms.Label();
             this.btnLimpiar = new System.Windows.Forms.Button();
             this.lblAbona = new System.Windows.Forms.Label();
             this.txtAbona = new System.Windows.Forms.TextBox();
@@ -121,16 +120,6 @@ namespace ComercializadoraVerdum
             this.txtCliente.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtCliente_KeyDown);
             this.txtCliente.Leave += new System.EventHandler(this.txtCliente_Leave);
             // 
-            // lblDescuento
-            // 
-            this.lblDescuento.AutoSize = true;
-            this.lblDescuento.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblDescuento.Location = new System.Drawing.Point(228, 317);
-            this.lblDescuento.Name = "lblDescuento";
-            this.lblDescuento.Size = new System.Drawing.Size(106, 24);
-            this.lblDescuento.TabIndex = 11;
-            this.lblDescuento.Text = "Descuento:";
-            // 
             // btnLimpiar
             // 
             this.btnLimpiar.BackColor = System.Drawing.SystemColors.Control;
@@ -180,7 +169,6 @@ namespace ComercializadoraVerdum
             this.groupBox1.Controls.Add(this.buttonHistorial);
             this.groupBox1.Controls.Add(this.btnLimpiar);
             this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.lblDescuento);
             this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.txtCliente);
             this.groupBox1.Controls.Add(this.lblNombreCliente);
@@ -216,7 +204,6 @@ namespace ComercializadoraVerdum
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label lblNombreCliente;
         private System.Windows.Forms.TextBox txtCliente;
-        private System.Windows.Forms.Label lblDescuento;
         private System.Windows.Forms.Button btnLimpiar;
         private System.Windows.Forms.Label lblAbona;
         private System.Windows.Forms.TextBox txtAbona;
