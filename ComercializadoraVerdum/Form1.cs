@@ -262,13 +262,18 @@ namespace ComercializadoraVerdum
                     double cantidad = pesoBruto - (canastas * canastapkg);
                     row.Cells["Cantidad"].Value = cantidad;
 
-                    if (double.TryParse(row.Cells["Precio"].Value?.ToString(), out double precio))
+                    if (row.Cells["Precio"].Value is string precioString)
                     {
-                        row.Cells["Total"].Value = cantidad * precio;
+                        string valorNumerico = precioString.Replace("$", "").Replace(",", "").Trim();
+                        if (double.TryParse(valorNumerico, out double precio))
+                        {
+                            row.Cells["Total"].Value = $"${cantidad * precio}"; 
+                        }
                     }
                 }
             }
         }
+
 
         private void CalculateTotalSum()
         {
@@ -277,9 +282,13 @@ namespace ComercializadoraVerdum
             {
                 if (row.IsNewRow) continue;
 
-                if (decimal.TryParse(row.Cells["Total"].Value?.ToString(), out decimal total))
+                if (row.Cells["Total"].Value is string totalString)
                 {
-                    totalSum += total;
+                    string valorNumerico = totalString.Replace("$", "").Replace(",", "").Trim();
+                    if (decimal.TryParse(valorNumerico, out decimal total))
+                    {
+                        totalSum += total;
+                    }
                 }
             }
 
@@ -409,11 +418,40 @@ namespace ComercializadoraVerdum
                             {
                                 decimal pesocanastaKG = Convert.ToDecimal(row.Cells["Canasta P. KG"].Value);
                                 int idProducto = Convert.ToInt32(row.Cells["Producto"].Value);
-                                decimal precio = Convert.ToDecimal(row.Cells["Precio"].Value);
+
+                                decimal precio;
+                                if (row.Cells["Precio"].Value is string precioString)
+                                {
+                                    string valorNumerico = precioString.Replace("$", "").Replace(",", "").Trim();
+                                    if (!decimal.TryParse(valorNumerico, out precio))
+                                    {
+                                        MessageBox.Show($"Error al convertir el precio en la fila {row.Index + 1}.");
+                                        continue; 
+                                    }
+                                }
+                                else
+                                {
+                                    precio = Convert.ToDecimal(row.Cells["Precio"].Value);
+                                }
+
                                 int canastas = Convert.ToInt32(row.Cells["Canastas"].Value);
                                 double pesoBruto = Convert.ToDouble(row.Cells["PesoBruto"].Value);
                                 int cantidad = Convert.ToInt32(row.Cells["Cantidad"].Value);
-                                decimal valortotal = Convert.ToDecimal(row.Cells["Total"].Value);
+
+                                decimal valortotal;
+                                if (row.Cells["Total"].Value is string totalString)
+                                {
+                                    string valorNumericoTotal = totalString.Replace("$", "").Replace(",", "").Trim();
+                                    if (!decimal.TryParse(valorNumericoTotal, out valortotal))
+                                    {
+                                        MessageBox.Show($"Error al convertir el total en la fila {row.Index + 1}.");
+                                        continue; 
+                                    }
+                                }
+                                else
+                                {
+                                    valortotal = Convert.ToDecimal(row.Cells["Total"].Value);
+                                }
 
                                 totalCompra += valortotal;
                                 totalCanastas += canastas;
@@ -438,6 +476,8 @@ namespace ComercializadoraVerdum
                                 row.Cells["IsSaved"].Value = true;
                             }
                         }
+
+
 
                         string updateVentaQuery = "UPDATE Ventas SET totalproductos = ?, totalcanastas = ?, totalpesobruto = ?, totalcompra = ? WHERE VentaId = ?";
                         using (OleDbCommand updateCommand = new OleDbCommand(updateVentaQuery, connection))
@@ -651,7 +691,7 @@ namespace ComercializadoraVerdum
                 if (productId != null)
                 {
                     decimal precio = GetProductPriceById(Convert.ToInt32(productId));
-                    dataGridView1.Rows[e.RowIndex].Cells["Precio"].Value = precio;
+                    dataGridView1.Rows[e.RowIndex].Cells["Precio"].Value = $"${precio}";
                 }
             }
         }
