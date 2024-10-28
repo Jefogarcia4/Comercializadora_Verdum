@@ -30,17 +30,20 @@ namespace ComercializadoraVerdum
         private void InitializeComponent()
         {
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
-            this.SaveButton = new System.Windows.Forms.Button();
-            this.buttonHistorial = new System.Windows.Forms.Button();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
             this.lblNombreCliente = new System.Windows.Forms.Label();
             this.txtCliente = new System.Windows.Forms.TextBox();
             this.btnLimpiar = new System.Windows.Forms.Button();
-            this.lblAbona = new System.Windows.Forms.Label();
-            this.txtAbona = new System.Windows.Forms.TextBox();
             this.lblnumerofactura = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.lblTituloResumen = new System.Windows.Forms.Label();
+            this.lblResumenVenta = new System.Windows.Forms.Label();
+            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.txtAbona = new System.Windows.Forms.TextBox();
+            this.SaveButton = new System.Windows.Forms.Button();
+            this.lblAbona = new System.Windows.Forms.Label();
+            this.buttonHistorial = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -55,49 +58,6 @@ namespace ComercializadoraVerdum
             this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             this.dataGridView1.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellValueChanged);
             this.dataGridView1.DefaultValuesNeeded += new System.Windows.Forms.DataGridViewRowEventHandler(this.dataGridView1_DefaultValuesNeeded);
-            // 
-            // SaveButton
-            // 
-            this.SaveButton.BackColor = System.Drawing.Color.DarkSeaGreen;
-            this.SaveButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SaveButton.Location = new System.Drawing.Point(12, 346);
-            this.SaveButton.Name = "SaveButton";
-            this.SaveButton.Size = new System.Drawing.Size(379, 41);
-            this.SaveButton.TabIndex = 3;
-            this.SaveButton.Text = "Guardar";
-            this.SaveButton.UseVisualStyleBackColor = false;
-            this.SaveButton.Click += new System.EventHandler(this.SaveButton_Click);
-            // 
-            // buttonHistorial
-            // 
-            this.buttonHistorial.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.buttonHistorial.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonHistorial.Location = new System.Drawing.Point(397, 345);
-            this.buttonHistorial.Name = "buttonHistorial";
-            this.buttonHistorial.Size = new System.Drawing.Size(379, 42);
-            this.buttonHistorial.TabIndex = 6;
-            this.buttonHistorial.Text = "Historial";
-            this.buttonHistorial.UseVisualStyleBackColor = false;
-            this.buttonHistorial.Click += new System.EventHandler(this.buttonHistorial_Click);
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(7, 317);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(56, 24);
-            this.label3.TabIndex = 7;
-            this.label3.Text = "Total:";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(200, 345);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(0, 24);
-            this.label4.TabIndex = 8;
             // 
             // lblNombreCliente
             // 
@@ -132,23 +92,6 @@ namespace ComercializadoraVerdum
             this.btnLimpiar.UseVisualStyleBackColor = false;
             this.btnLimpiar.Click += new System.EventHandler(this.btnLimpiar_Click);
             // 
-            // lblAbona
-            // 
-            this.lblAbona.AutoSize = true;
-            this.lblAbona.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblAbona.Location = new System.Drawing.Point(471, 314);
-            this.lblAbona.Name = "lblAbona";
-            this.lblAbona.Size = new System.Drawing.Size(128, 24);
-            this.lblAbona.TabIndex = 13;
-            this.lblAbona.Text = "Valor pagado:";
-            // 
-            // txtAbona
-            // 
-            this.txtAbona.Location = new System.Drawing.Point(595, 317);
-            this.txtAbona.Name = "txtAbona";
-            this.txtAbona.Size = new System.Drawing.Size(181, 20);
-            this.txtAbona.TabIndex = 14;
-            // 
             // lblnumerofactura
             // 
             this.lblnumerofactura.AutoSize = true;
@@ -161,29 +104,109 @@ namespace ComercializadoraVerdum
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.lblTituloResumen);
+            this.groupBox1.Controls.Add(this.lblResumenVenta);
             this.groupBox1.Controls.Add(this.lblnumerofactura);
             this.groupBox1.Controls.Add(this.dataGridView1);
-            this.groupBox1.Controls.Add(this.txtAbona);
-            this.groupBox1.Controls.Add(this.SaveButton);
-            this.groupBox1.Controls.Add(this.lblAbona);
-            this.groupBox1.Controls.Add(this.buttonHistorial);
             this.groupBox1.Controls.Add(this.btnLimpiar);
-            this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.txtCliente);
             this.groupBox1.Controls.Add(this.lblNombreCliente);
             this.groupBox1.Location = new System.Drawing.Point(12, 4);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(785, 392);
+            this.groupBox1.Size = new System.Drawing.Size(785, 448);
             this.groupBox1.TabIndex = 16;
             this.groupBox1.TabStop = false;
+            // 
+            // lblTituloResumen
+            // 
+            this.lblTituloResumen.AutoSize = true;
+            this.lblTituloResumen.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTituloResumen.Location = new System.Drawing.Point(9, 317);
+            this.lblTituloResumen.Name = "lblTituloResumen";
+            this.lblTituloResumen.Size = new System.Drawing.Size(146, 15);
+            this.lblTituloResumen.TabIndex = 17;
+            this.lblTituloResumen.Text = "RESUMEN DE VENTA";
+            // 
+            // lblResumenVenta
+            // 
+            this.lblResumenVenta.AutoSize = true;
+            this.lblResumenVenta.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblResumenVenta.Location = new System.Drawing.Point(9, 338);
+            this.lblResumenVenta.Name = "lblResumenVenta";
+            this.lblResumenVenta.Size = new System.Drawing.Size(239, 15);
+            this.lblResumenVenta.TabIndex = 16;
+            this.lblResumenVenta.Text = "No se han agredado productos a la factura";
+            // 
+            // txtAbona
+            // 
+            this.txtAbona.Location = new System.Drawing.Point(606, 458);
+            this.txtAbona.Name = "txtAbona";
+            this.txtAbona.Size = new System.Drawing.Size(181, 20);
+            this.txtAbona.TabIndex = 22;
+            // 
+            // SaveButton
+            // 
+            this.SaveButton.BackColor = System.Drawing.Color.DarkSeaGreen;
+            this.SaveButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.SaveButton.Location = new System.Drawing.Point(23, 487);
+            this.SaveButton.Name = "SaveButton";
+            this.SaveButton.Size = new System.Drawing.Size(379, 41);
+            this.SaveButton.TabIndex = 17;
+            this.SaveButton.Text = "Guardar";
+            this.SaveButton.UseVisualStyleBackColor = false;
+            // 
+            // lblAbona
+            // 
+            this.lblAbona.AutoSize = true;
+            this.lblAbona.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblAbona.Location = new System.Drawing.Point(482, 455);
+            this.lblAbona.Name = "lblAbona";
+            this.lblAbona.Size = new System.Drawing.Size(128, 24);
+            this.lblAbona.TabIndex = 21;
+            this.lblAbona.Text = "Valor pagado:";
+            // 
+            // buttonHistorial
+            // 
+            this.buttonHistorial.BackColor = System.Drawing.SystemColors.ActiveCaption;
+            this.buttonHistorial.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonHistorial.Location = new System.Drawing.Point(408, 486);
+            this.buttonHistorial.Name = "buttonHistorial";
+            this.buttonHistorial.Size = new System.Drawing.Size(379, 42);
+            this.buttonHistorial.TabIndex = 18;
+            this.buttonHistorial.Text = "Historial";
+            this.buttonHistorial.UseVisualStyleBackColor = false;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(18, 458);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(56, 24);
+            this.label3.TabIndex = 19;
+            this.label3.Text = "Total:";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label4.Location = new System.Drawing.Point(211, 486);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(0, 24);
+            this.label4.TabIndex = 20;
             // 
             // FrmHome
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ButtonFace;
-            this.ClientSize = new System.Drawing.Size(801, 399);
+            this.ClientSize = new System.Drawing.Size(801, 535);
+            this.Controls.Add(this.txtAbona);
+            this.Controls.Add(this.SaveButton);
+            this.Controls.Add(this.lblAbona);
+            this.Controls.Add(this.buttonHistorial);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.groupBox1);
             this.Name = "FrmHome";
             this.Text = "Comercializadora Verdum - Registro de Ventas";
@@ -193,22 +216,26 @@ namespace ComercializadoraVerdum
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
         private System.Windows.Forms.DataGridView dataGridView1;
-        private System.Windows.Forms.Button SaveButton;
-        private System.Windows.Forms.Button buttonHistorial;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label lblNombreCliente;
         private System.Windows.Forms.TextBox txtCliente;
         private System.Windows.Forms.Button btnLimpiar;
-        private System.Windows.Forms.Label lblAbona;
-        private System.Windows.Forms.TextBox txtAbona;
         private System.Windows.Forms.Label lblnumerofactura;
         private System.Windows.Forms.GroupBox groupBox1;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.Label lblTituloResumen;
+        private System.Windows.Forms.Label lblResumenVenta;
+        private System.Windows.Forms.TextBox txtAbona;
+        private System.Windows.Forms.Button SaveButton;
+        private System.Windows.Forms.Label lblAbona;
+        private System.Windows.Forms.Button buttonHistorial;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label4;
     }
 }
 

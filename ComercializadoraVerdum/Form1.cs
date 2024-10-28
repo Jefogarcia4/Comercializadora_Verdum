@@ -22,6 +22,9 @@ namespace ComercializadoraVerdum
         private int consecutivo = 0;
         private DateTime fechaActual;
         private IConfigurationRoot configuration;
+        private Dictionary<string, List<ProductoDetalle>> resumenProductos = new Dictionary<string, List<ProductoDetalle>>();
+
+
         public FrmHome()
         {
 
@@ -36,7 +39,71 @@ namespace ComercializadoraVerdum
             SiguienteConsecutivo();
             this.Icon = new Icon("Images/icono-factura-final.ico");
             this.Shown += new EventHandler(FrmHome_Shown);
+            dataGridView1.CellEndEdit += dataGridView1_CellEndEdit;
 
+        }
+
+        private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            var row = dataGridView1.Rows[e.RowIndex];
+
+            string producto = row.Cells["Producto"].FormattedValue?.ToString();
+            string precio = row.Cells["Precio"].Value?.ToString();
+            string canastas = row.Cells["Canastas"].Value?.ToString();
+            string pesoBruto = row.Cells["Pesobruto"].Value?.ToString();
+            string cantidad = row.Cells["Cantidad"].Value?.ToString();
+            string total = row.Cells["Total"].Value?.ToString();
+
+            if (!string.IsNullOrEmpty(producto) &&
+                !string.IsNullOrEmpty(precio) &&
+                !string.IsNullOrEmpty(canastas) &&
+                !string.IsNullOrEmpty(pesoBruto) &&
+                !string.IsNullOrEmpty(cantidad) &&
+                !string.IsNullOrEmpty(total))
+            {
+                var detalle = new ProductoDetalle
+                {
+                    Precio = precio,
+                    Canastas = canastas,
+                    PesoBruto = pesoBruto, 
+                    Cantidad = cantidad,
+                    Total = total
+                };
+
+                if (!resumenProductos.ContainsKey(producto))
+                {
+                    resumenProductos[producto] = new List<ProductoDetalle>();
+                }
+                resumenProductos[producto].Add(detalle);
+
+                ActualizarResumenVentaLabel();
+            }
+        }
+
+        private void ActualizarResumenVentaLabel()
+        {
+            StringBuilder resumenVenta = new StringBuilder();
+
+            foreach (var producto in resumenProductos)
+            {
+                resumenVenta.AppendLine($"Producto: {producto.Key}");
+
+                foreach (var detalle in producto.Value)
+                {
+                    resumenVenta.AppendLine($"  Valor: {detalle.Precio} -- Total Canastas: {detalle.Canastas} - Peso Bruto: {detalle.PesoBruto} - Cantidad: {detalle.Cantidad} - Total: {detalle.Total}");
+                }
+
+                resumenVenta.AppendLine();
+            }
+
+            lblResumenVenta.Text = resumenVenta.ToString();
+
+            AjustarAlturaResumenVenta();
+        }
+
+        private void AjustarAlturaResumenVenta()
+        {
+            lblResumenVenta.Height = TextRenderer.MeasureText(lblResumenVenta.Text, lblResumenVenta.Font, lblResumenVenta.Size, TextFormatFlags.WordBreak).Height;
         }
 
         private void IconoFormularioRegistroVentas()
@@ -243,7 +310,7 @@ namespace ComercializadoraVerdum
         {
 
             txtCliente.Focus();
-            this.Size = new Size(820, 440);
+            //this.Size = new Size(820, 600);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             dataGridView1.Enabled = false;
@@ -687,6 +754,14 @@ namespace ComercializadoraVerdum
             if (e.ColumnIndex == dataGridView1.Columns["Producto"].Index && e.RowIndex >= 0)
             {
                 var productId = dataGridView1.Rows[e.RowIndex].Cells["Producto"].Value;
+                var row = dataGridView1.Rows[e.RowIndex];
+                var comboBoxCell = (DataGridViewComboBoxCell)row.Cells["Producto"];
+                string nombreProducto = comboBoxCell.FormattedValue?.ToString();
+                DataRowView selectedProduct = comboBoxCell.Value as DataRowView;
+                if (selectedProduct != null)
+                {
+                    row.Cells["Precio"].Value = selectedProduct["precio"].ToString();
+                }
 
                 if (productId != null)
                 {
@@ -828,6 +903,15 @@ namespace ComercializadoraVerdum
             //lblDescuento.Text = "Descuento: ";
             dataGridView1.Rows.Clear();
             SiguienteConsecutivo();
+        }
+
+        public class ProductoDetalle
+        {
+            public string Precio { get; set; }
+            public string Canastas { get; set; }
+            public string PesoBruto { get; set; }
+            public string Cantidad { get; set; }
+            public string Total { get; set; }
         }
     }
 }
