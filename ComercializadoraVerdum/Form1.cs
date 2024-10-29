@@ -334,7 +334,7 @@ namespace ComercializadoraVerdum
                         string valorNumerico = precioString.Replace("$", "").Replace(",", "").Trim();
                         if (double.TryParse(valorNumerico, out double precio))
                         {
-                            row.Cells["Total"].Value = $"${cantidad * precio}"; 
+                            row.Cells["Total"].Value = $"${cantidad * precio:N0}"; 
                         }
                     }
                 }
@@ -402,20 +402,20 @@ namespace ComercializadoraVerdum
                             if (total > 0)
                             {
                                 decimal deuda = total;
-                                MessageBox.Show($"El cliente: {txtCliente.Text} deja una deuda de: ${deuda:N0}",
-                                                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                //MessageBox.Show($"El cliente: {txtCliente.Text} deja una deuda de: ${deuda:N0}",
+                                //                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                 ActualizarSaldoClienteEnContra(txtCliente.Text, totalValorCompra, deuda, abono);
                             }
                             else if (total == 0) // Pago completo exitoso
                             {
-                                MessageBox.Show($"El cliente: {txtCliente.Text} pagó el total de la compra. Transacción exitosa.",
-                                                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                //MessageBox.Show($"El cliente: {txtCliente.Text} pagó el total de la compra. Transacción exitosa.",
+                                //                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
                             else // Total es negativo (saldo a favor)
                             {
                                 decimal saldoNuevoAFavor = -total;
-                                MessageBox.Show($"Debe devolver al cliente: {txtCliente.Text} un valor de: ${saldoNuevoAFavor:N0}",
-                                                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                //MessageBox.Show($"Debe devolver al cliente: {txtCliente.Text} un valor de: ${saldoNuevoAFavor:N0}",
+                                //                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                 ActualizarSaldoClienteAFavor(txtCliente.Text, totalValorCompra, saldoNuevoAFavor, abono);
                             }
                         }
@@ -766,7 +766,7 @@ namespace ComercializadoraVerdum
                 if (productId != null)
                 {
                     decimal precio = GetProductPriceById(Convert.ToInt32(productId));
-                    dataGridView1.Rows[e.RowIndex].Cells["Precio"].Value = $"${precio}";
+                    dataGridView1.Rows[e.RowIndex].Cells["Precio"].Value = $"${precio:N0}";
                 }
             }
         }
@@ -787,12 +787,7 @@ namespace ComercializadoraVerdum
 
         private void btnLimpiar_Click(object sender, EventArgs e)
         {
-            txtCliente.Clear();
-            txtCliente.Enabled = true;
-            btnLimpiar.Visible = false;
-            dataGridView1.Enabled = false;
-            dataGridView1.DataSource = null;
-            //lblDescuento.Text = $"Descuento: ";
+            LimpiarCampos();
 
         }
 
@@ -900,7 +895,7 @@ namespace ComercializadoraVerdum
             btnLimpiar.Visible = false;
             txtCliente.Enabled = true;
             label3.Text = "Total: ";
-            //lblDescuento.Text = "Descuento: ";
+            lblResumenVenta.Text = "No se han agredado productos a la factura";
             dataGridView1.Rows.Clear();
             SiguienteConsecutivo();
         }

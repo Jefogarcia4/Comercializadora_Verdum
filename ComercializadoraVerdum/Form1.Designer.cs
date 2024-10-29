@@ -154,6 +154,7 @@ namespace ComercializadoraVerdum
             this.SaveButton.TabIndex = 17;
             this.SaveButton.Text = "Guardar";
             this.SaveButton.UseVisualStyleBackColor = false;
+            this.SaveButton.Click += new System.EventHandler(this.SaveButton_Click);
             // 
             // lblAbona
             // 
@@ -175,6 +176,7 @@ namespace ComercializadoraVerdum
             this.buttonHistorial.TabIndex = 18;
             this.buttonHistorial.Text = "Historial";
             this.buttonHistorial.UseVisualStyleBackColor = false;
+            this.buttonHistorial.Click += new System.EventHandler(this.buttonHistorial_Click);
             // 
             // label3
             // 
