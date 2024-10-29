@@ -43,6 +43,14 @@ namespace ComercializadoraVerdum
 
         }
 
+        private void ScrollPanel() 
+        {
+            Panel panel1 = new Panel();
+            panel1.AutoScroll = true;
+            grbResumenDeVenta.Controls.Add(panel1);
+            panel1.Controls.Add(lblResumenVenta); 
+        }
+
         private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
             var row = dataGridView1.Rows[e.RowIndex];
@@ -138,7 +146,10 @@ namespace ComercializadoraVerdum
         {
             try
             {
-                connection.Open();
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    connection.Open();
+                }
 
                 string fechaActual = DateTime.Now.ToString("yyyyMMdd");
 
@@ -220,7 +231,10 @@ namespace ComercializadoraVerdum
         {
             try
             {
-                connection.Open();
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    connection.Open();
+                }
                 OleDbCommand command = new OleDbCommand("SELECT id, nombre, precio FROM Productos", connection);
                 dataGridView1.Columns.Add("Canasta P. KG", "Canasta P. KG");
 
@@ -268,7 +282,10 @@ namespace ComercializadoraVerdum
 
             try
             {
-                connection.Open();
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    connection.Open();
+                }
                 OleDbCommand command = new OleDbCommand("SELECT precio FROM Productos WHERE id = ?", connection);
                 command.Parameters.AddWithValue("?", productId);
                 price = (decimal)command.ExecuteScalar();
@@ -367,7 +384,10 @@ namespace ComercializadoraVerdum
 
             try
             {
-                connection.Open();
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    connection.Open();
+                }
 
                 if (string.IsNullOrWhiteSpace(txtCliente.Text) || string.IsNullOrWhiteSpace(txtAbona.Text))
                 {
@@ -895,8 +915,9 @@ namespace ComercializadoraVerdum
             btnLimpiar.Visible = false;
             txtCliente.Enabled = true;
             label3.Text = "Total: ";
-            lblResumenVenta.Text = "No se han agredado productos a la factura";
             dataGridView1.Rows.Clear();
+            resumenProductos.Clear();
+            lblResumenVenta.Text = "No se han agredado productos a la factura";
             SiguienteConsecutivo();
         }
 
