@@ -81,6 +81,7 @@ namespace ComercializadoraVerdum
             toolTip.SetToolTip(btnRefrescar, "Refrescar información");
             this.Controls.Add(btnRefrescar);
             this.Controls.Add(btnVolver);
+            printDocument.BeginPrint += new PrintEventHandler(PrintDocument_BeginPrint);
             printDocument.PrintPage += new PrintPageEventHandler(PrintDocument_PrintPage);
             printPreviewDialog.Document = printDocument;
             btnFiltrar.Click += BtnFiltrar_Click;
@@ -137,25 +138,29 @@ namespace ComercializadoraVerdum
                 connection.Close();
             }
         }
+
         private void BtnFiltrar_Click(object sender, EventArgs e)
         {
-            if (datePickerStart.Value == null)
+            if (datePickerStart.Value == null && string.IsNullOrWhiteSpace(txtCliente.Text))
             {
-                MessageBox.Show("Por favor, seleccione una Fecha.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(txtCliente.Text))
-            {
-                MessageBox.Show("Por favor, ingrese el nombre del Cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Por favor, seleccione una Fecha o ingrese un Cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             DateTime selectedDate = datePickerStart.Value;
             string cliente = txtCliente.Text;
-            string filterQuery = $"Fecha = #{selectedDate:MM-dd-yyyy}# AND NombreCliente = '{cliente}'";
-            LoadData(filterQuery);
 
+            string filterQuery = "1=1"; 
+            if (datePickerStart.Value != null)
+            {
+                filterQuery += $" AND Fecha = #{selectedDate:MM-dd-yyyy}#";
+            }
+            if (!string.IsNullOrWhiteSpace(cliente))
+            {
+                filterQuery += $" AND NombreCliente = '{cliente}'";
+            }
+
+            LoadData(filterQuery);
         }
         private void ConsultarDatos(DateTime fecha, string cliente)
         {
@@ -255,10 +260,11 @@ namespace ComercializadoraVerdum
                             }
                             _totalvalorventa = $"${totalVenta.ToString("N0")}";
                             _totalpeso = totalPeso.ToString("N0");
-                            printDocument.Print();
+                            printPreviewDialog.ShowDialog();
+                            //printDocument.Print();
                             MessageBox.Show("Se Imprimió correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             //ImprimirDocumento();
-                            //printPreviewDialog.ShowDialog();
+                            //
                         }
                     }
                     catch (Exception ex)
@@ -420,13 +426,25 @@ namespace ComercializadoraVerdum
                 }
             }
         }
+
+        private void PrintDocument_BeginPrint(object sender, PrintEventArgs e)
+        {
+            PrintDocument printDocument = (PrintDocument)sender;
+
+            float widthInInches = 7.2f / 2.54f; 
+            float heightInInches = 20.99f / 2.54f;
+
+            PaperSize customPaperSize = new PaperSize("CustomSize", (int)(widthInInches * 100), (int)(heightInInches * 100));
+            printDocument.DefaultPageSettings.PaperSize = customPaperSize;
+        }
+
         private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
         {
             Graphics g = e.Graphics;
-            Font font = new Font("Arial", 12);
+            Font font = new Font("Arial", 9);
             Brush brush = Brushes.Black;
-            int startX = 50;
-            int startY = 50;
+            int startX = 10;
+            int startY = 10;
             int offsetY = 25;
 
             int pageWidth = e.PageBounds.Width;
@@ -441,57 +459,56 @@ namespace ComercializadoraVerdum
             }
 
             string prefacturaVenta = "PREFECTURA DE VENTA";
-            float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 13, FontStyle.Bold)).Width;
+            float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold)).Width;
             float prefacturaVentaX = (pageWidth - prefacturaVentaWidth) / 2;
-            g.DrawString(prefacturaVenta, new Font("Arial", 13, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);
+            g.DrawString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);
             offsetY += 50;
 
             string medellinColombia = "MEDELLIN - COLOMBIA";
-            float medellinColombiaWidth = g.MeasureString(medellinColombia, new Font("Arial", 13, FontStyle.Bold)).Width;
+            float medellinColombiaWidth = g.MeasureString(medellinColombia, new Font("Arial", 8, FontStyle.Bold)).Width;
             float medellinColombiaX = (pageWidth - medellinColombiaWidth) / 2;
-            g.DrawString(medellinColombia, new Font("Arial", 13, FontStyle.Bold), brush, medellinColombiaX, startY + offsetY);
+            g.DrawString(medellinColombia, new Font("Arial", 8, FontStyle.Bold), brush, medellinColombiaX, startY + offsetY);
             offsetY += 50;
 
             string direccion = "DIRECCION: PLAZA MAYORISTA DE ANTIOQUIA";
-            float direccionWidth = g.MeasureString(direccion, new Font("Arial", 13, FontStyle.Bold)).Width;
+            float direccionWidth = g.MeasureString(direccion, new Font("Arial", 8, FontStyle.Bold)).Width;
             float direccionX = (pageWidth - direccionWidth) / 2;
-            g.DrawString(direccion, new Font("Arial", 13, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            g.DrawString(direccion, new Font("Arial", 8, FontStyle.Bold), brush, direccionX, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 12, FontStyle.Bold), brush, startX + 160, startY + offsetY);
+            g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
             offsetY += 25;
 
-            g.DrawString($"FECHA: {_fecha}", new Font("Arial", 12, FontStyle.Bold), brush, startX + 160, startY + offsetY);
+            g.DrawString($"FECHA: {_fecha}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
             offsetY += 50;
-
 
             string comercializadoraText = "COMERCIALIZADORA VERDUM SAS";
-            float comercializadoraTextWidth = g.MeasureString(comercializadoraText, new Font("Arial", 13, FontStyle.Bold)).Width;
+            float comercializadoraTextWidth = g.MeasureString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold)).Width;
             float comercializadoraTextX = (pageWidth - comercializadoraTextWidth) / 2;
-            g.DrawString(comercializadoraText, new Font("Arial", 13, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
+            g.DrawString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 12, FontStyle.Bold), brush, startX + 160, startY + offsetY);
+            g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString("PRODUCTO", new Font("Arial", 13, FontStyle.Bold), brush, startX + 160, startY + offsetY);
-            g.DrawString("PESO", new Font("Arial", 13, FontStyle.Bold), brush, startX + 290, startY + offsetY);
-            g.DrawString("PRECIO", new Font("Arial", 13, FontStyle.Bold), brush, startX + 360, startY + offsetY);
-            g.DrawString("VALOR", new Font("Arial", 13, FontStyle.Bold), brush, startX + 470, startY + offsetY);
+            g.DrawString("PRODUCTO", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            g.DrawString("PESO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 80, startY + offsetY);
+            g.DrawString("PRECIO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 130, startY + offsetY);
+            g.DrawString("VALOR", new Font("Arial", 9, FontStyle.Bold), brush, startX + 200, startY + offsetY);
             offsetY += 25;
 
             foreach (var detalle in _detalleventas)
             {
-                g.DrawString(detalle.Nombre, font, brush, startX + 160, startY + offsetY);
-                g.DrawString(detalle.PesoBruto.ToString(), font, brush, startX + 290, startY + offsetY);
-                g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 360, startY + offsetY);
-                g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 470, startY + offsetY);
+                g.DrawString(detalle.Nombre, font, brush, direccionX, startY + offsetY);
+                g.DrawString(detalle.PesoBruto.ToString(), font, brush, startX + 80, startY + offsetY);
+                g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 130, startY + offsetY);
+                g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 200, startY + offsetY);
                 offsetY += 25;
             }
             offsetY += 50;
 
             string totalLabel = "TOTAL VENTA:";
-            g.DrawString(totalLabel, new Font("Arial", 12, FontStyle.Bold), brush, startX + 160, startY + offsetY);
+            g.DrawString(totalLabel, new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
             float totalLabelWidth = g.MeasureString(totalLabel, new Font("Arial", 14, FontStyle.Bold)).Width;
 
             string totalPesoValue = _totalpeso;
@@ -499,11 +516,13 @@ namespace ComercializadoraVerdum
 
             float spaceWidth = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 440;
             float spaceWidth2 = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 300;
-            g.DrawString(totalPesoValue, font, brush, startX + totalLabelWidth + spaceWidth, startY + offsetY);
-            g.DrawString(totalVentaText, font, brush, startX + totalLabelWidth + spaceWidth2 + g.MeasureString(totalPesoValue, font).Width, startY + offsetY);
+            g.DrawString(totalPesoValue, font, brush, startX + 95, startY + offsetY);
+            g.DrawString(totalVentaText, font, brush, startX + 170 + g.MeasureString(totalPesoValue, font).Width, startY + offsetY);
             offsetY += 50;
 
-            g.DrawString($"Fecha Generación Prefactura: {DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 10), brush, startX + 160, startY + offsetY);       
+            g.DrawString($"Fecha Generación Prefactura:", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 20, startY + offsetY);
+            offsetY += 20;
+            g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);       
         }
         private void ImprimirDocumento()
         {
