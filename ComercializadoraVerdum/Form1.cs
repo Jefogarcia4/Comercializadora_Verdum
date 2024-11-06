@@ -392,6 +392,7 @@ namespace ComercializadoraVerdum
                 if (string.IsNullOrWhiteSpace(txtCliente.Text) || string.IsNullOrWhiteSpace(txtAbona.Text))
                 {
                     MessageBox.Show("Por favor, complete los campos Nombre Cliente y valor pagado.", "Campos requeridos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    LimpiarCampos();
                 }
                 else
                 {
