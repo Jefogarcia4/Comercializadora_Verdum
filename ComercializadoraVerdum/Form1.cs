@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Net;
+using System.Globalization;
 
 
 namespace ComercializadoraVerdum
@@ -307,7 +308,6 @@ namespace ComercializadoraVerdum
             int rowIndex = dataGridView1.Rows.Add();
             DataGridViewRow newRow = dataGridView1.Rows[rowIndex];
             newRow.Cells["Canasta P. KG"].Value = 1.7;
-            //dataGridView1.Columns.Add("Precio", "Precio");
             dataGridView1.Columns.Add("Canastas", "Canastas");
             dataGridView1.Columns.Add("PesoBruto", "PesoBruto");
             dataGridView1.Columns.Add("Cantidad", "Cantidad");
@@ -336,47 +336,60 @@ namespace ComercializadoraVerdum
 
         private void CalculateQuantity(int rowIndex)
         {
+            // Cultura colombiana
+            var culturaColombiana = new CultureInfo("es-CO");
+
             DataGridViewRow row = dataGridView1.Rows[rowIndex];
             if (row.Cells["Canastas"].Value != null && row.Cells["PesoBruto"].Value != null && row.Cells["Canasta P. KG"].Value != null)
             {
                 if (int.TryParse(row.Cells["Canastas"].Value.ToString(), out int canastas) &&
-                    double.TryParse(row.Cells["PesoBruto"].Value.ToString(), out double pesoBruto) &&
-                    double.TryParse(row.Cells["Canasta P. KG"].Value.ToString(), out double canastapkg))
+                    double.TryParse(row.Cells["PesoBruto"].Value.ToString(), NumberStyles.Any, culturaColombiana, out double pesoBruto) &&
+                    double.TryParse(row.Cells["Canasta P. KG"].Value.ToString(), NumberStyles.Any, culturaColombiana, out double canastapkg))
                 {
+                    // Cálculo de la cantidad
                     double cantidad = pesoBruto - (canastas * canastapkg);
-                    row.Cells["Cantidad"].Value = cantidad;
+                    row.Cells["Cantidad"].Value = cantidad.ToString("N2", culturaColombiana);
 
+                    // Cálculo del total si el precio es válido
                     if (row.Cells["Precio"].Value is string precioString)
                     {
-                        string valorNumerico = precioString.Replace("$", "").Replace(",", "").Trim();
-                        if (double.TryParse(valorNumerico, out double precio))
+                        // Elimina el símbolo "$" y formatea el valor
+                        string valorNumerico = precioString.Replace("$", "").Trim();
+
+                        if (decimal.TryParse(valorNumerico, NumberStyles.Any, culturaColombiana, out decimal precio))
                         {
-                            row.Cells["Total"].Value = $"${cantidad * precio:N0}"; 
+                            double total = cantidad * (double)precio;
+                            row.Cells["Total"].Value = $"${total.ToString("N2", culturaColombiana)}";
                         }
                     }
                 }
             }
         }
 
-
         private void CalculateTotalSum()
         {
+            // Cultura colombiana
+            var culturaColombiana = new CultureInfo("es-CO");
             decimal totalSum = 0;
+
             foreach (DataGridViewRow row in dataGridView1.Rows)
             {
                 if (row.IsNewRow) continue;
 
                 if (row.Cells["Total"].Value is string totalString)
                 {
-                    string valorNumerico = totalString.Replace("$", "").Replace(",", "").Trim();
-                    if (decimal.TryParse(valorNumerico, out decimal total))
+                    // Elimina el símbolo "$" y formatea el valor
+                    string valorNumerico = totalString.Replace("$", "").Trim();
+
+                    if (decimal.TryParse(valorNumerico, NumberStyles.Any, culturaColombiana, out decimal total))
                     {
                         totalSum += total;
                     }
                 }
             }
 
-            label3.Text = $"Total: {Convert.ToDecimal(totalSum).ToString("C0")}";
+            // Muestra el total formateado con la cultura colombiana
+            label3.Text = $"Total: {totalSum.ToString("N2", culturaColombiana)}";
         }
 
         private void SaveButton_Click(object sender, EventArgs e)
@@ -402,16 +415,17 @@ namespace ComercializadoraVerdum
                         int totalCanastas = 0;
                         double totalPesoBruto = 0;
                         decimal total = 0;
-                        string valor1Texto = label3.Text.Replace("Total: $ ", "").Replace(",", "");
+                        string valor1Texto = label3.Text.Replace("Total: $ ", "");
                         string valor2Texto = "0.00";
-                        string abonoTexto = txtAbona.Text.Replace(",", "");
+                        string abonoTexto = txtAbona.Text;
+                        decimal abonocliente = decimal.Parse(abonoTexto.ToString());
 
                         decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
                         decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
 
                         if (decimal.TryParse(valor1Texto, out decimal totalValorCompra) &&
                             decimal.TryParse(valor2Texto, out decimal descuento) &&
-                            decimal.TryParse(abonoTexto, out decimal abono))
+                            decimal.TryParse(abonocliente.ToString(), out decimal abono))
                         {
                             if (saldoFavor > 0)
                             {
