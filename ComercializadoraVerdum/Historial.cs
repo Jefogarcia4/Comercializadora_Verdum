@@ -17,6 +17,7 @@ namespace ComercializadoraVerdum
 {
     public partial class Historial : Form
     {
+
         private OleDbConnection connection;
         private IConfigurationRoot configuration;
         private PrintDocument printDocument = new PrintDocument();
@@ -218,7 +219,7 @@ namespace ComercializadoraVerdum
                 }
             }      
         }
-        private void ImprimirFacturaCompra(int ventaId)
+        public void ImprimirFacturaCompra(int ventaId)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection");
             decimal totalVenta = 0;

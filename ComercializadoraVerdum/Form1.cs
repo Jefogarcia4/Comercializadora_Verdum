@@ -20,13 +20,15 @@ namespace ComercializadoraVerdum
     public partial class FrmHome : Form
     {
         private OleDbConnection connection;
+        private Historial _historial;
         private int consecutivo = 0;
         private DateTime fechaActual;
         private IConfigurationRoot configuration;
         private Dictionary<string, List<ProductoDetalle>> resumenProductos = new Dictionary<string, List<ProductoDetalle>>();
 
 
-        public FrmHome()
+
+        public FrmHome(Historial historial)
         {
 
             InitializeComponent();
@@ -41,7 +43,8 @@ namespace ComercializadoraVerdum
             this.Icon = new Icon("Images/icono-factura-final.ico");
             this.Shown += new EventHandler(FrmHome_Shown);
             dataGridView1.CellEndEdit += dataGridView1_CellEndEdit;
-
+            _historial = historial;
+            
         }
 
         private void ScrollPanel() 
@@ -415,51 +418,64 @@ namespace ComercializadoraVerdum
                         int totalCanastas = 0;
                         double totalPesoBruto = 0;
                         decimal total = 0;
-                        string valor1Texto = label3.Text.Replace("Total: $ ", "");
-                        string valor2Texto = "0.00";
-                        string abonoTexto = txtAbona.Text;
-                        decimal abonocliente = decimal.Parse(abonoTexto.ToString());
+                        decimal abono = 0;
+                        // Conversión de texto a número
+                        string valor1Texto = label3.Text.Replace("Total:$", "");
+                        string reemplazovalor1Texto = valor1Texto.Replace("Total: ", "").Replace(".", "").Replace(",", "");
 
-                        decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
-                        decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
-
-                        if (decimal.TryParse(valor1Texto, out decimal totalValorCompra) &&
-                            decimal.TryParse(valor2Texto, out decimal descuento) &&
-                            decimal.TryParse(abonocliente.ToString(), out decimal abono))
+                        if (int.TryParse(reemplazovalor1Texto, out int numero))
                         {
-                            if (saldoFavor > 0)
+                            if (numero % 100 == 0)
                             {
-                                totalValorCompra -= Math.Min(descuento, saldoFavor);
-                            }
+                                int ultimosDosDigitos = numero % 100;
 
-                            total = totalValorCompra - abono;
+                                if (ultimosDosDigitos >= 50)
+                                {
 
-                            if (total > 0)
-                            {
-                                decimal deuda = total;
-                                //MessageBox.Show($"El cliente: {txtCliente.Text} deja una deuda de: ${deuda:N0}",
-                                //                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                ActualizarSaldoClienteEnContra(txtCliente.Text, totalValorCompra, deuda, abono);
-                            }
-                            else if (total == 0) // Pago completo exitoso
-                            {
-                                //MessageBox.Show($"El cliente: {txtCliente.Text} pagó el total de la compra. Transacción exitosa.",
-                                //                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            }
-                            else // Total es negativo (saldo a favor)
-                            {
-                                decimal saldoNuevoAFavor = -total;
-                                //MessageBox.Show($"Debe devolver al cliente: {txtCliente.Text} un valor de: ${saldoNuevoAFavor:N0}",
-                                //                "Resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                ActualizarSaldoClienteAFavor(txtCliente.Text, totalValorCompra, saldoNuevoAFavor, abono);
+                                    numero = (numero / 100) * 100 + 100;
+                                }
+                                else
+                                {
+
+                                    numero = numero / 100;
+                                }
                             }
                         }
                         else
                         {
-                            MessageBox.Show("Por favor, ingrese valores válidos.");
-                            return;
+                            Console.WriteLine("El valor no es un número válido.");
                         }
 
+
+                            string abonoTexto = txtAbona.Text;
+                        string reemplazoabonoTexto = abonoTexto.Replace(".", "").Replace(",", "");
+
+                        CultureInfo cultureColombia = new CultureInfo("es-CO");
+
+                        decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
+                        decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
+
+                        if (decimal.TryParse(numero.ToString(), NumberStyles.Any, cultureColombia, out decimal totalValorCompra) &&
+                            decimal.TryParse(reemplazoabonoTexto, NumberStyles.Any, cultureColombia, out  abono))
+                        {
+                            if (abono > totalValorCompra)
+                            {
+                                decimal cambio = abono - totalValorCompra;
+                                MessageBox.Show($"Devolver al cliente: {cambio.ToString("C", cultureColombia)}", "Venta Exitosa",MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            else if (abono == totalValorCompra)
+                            {
+                                //MessageBox.Show("El pago fue completado.", "Venta Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            else
+                            {
+                                decimal deuda = totalValorCompra - abono;
+                                MessageBox.Show($"El cliente queda debiendo: {deuda.ToString("C", cultureColombia)}", "Pendiente por Pagar",MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                ActualizarSaldoClienteEnContra(txtCliente.Text, totalValorCompra, deuda, abono);
+                            }
+                        }
+
+                    
 
 
                         string fechaActual = DateTime.Now.ToString("yyyyMMdd");
@@ -500,7 +516,7 @@ namespace ComercializadoraVerdum
                             ventaCommand.Parameters.AddWithValue("@totalcanastas", 0);
                             ventaCommand.Parameters.AddWithValue("@totalpesobruto", 0);
                             ventaCommand.Parameters.AddWithValue("@totalcompra", 0);
-                            ventaCommand.Parameters.AddWithValue("@descuento", descuento);
+                            ventaCommand.Parameters.AddWithValue("@descuento", 0);
                             ventaCommand.Parameters.AddWithValue("@totalabona", abono);
                             ventaCommand.Parameters.AddWithValue("@totalpagar", total);
                             ventaCommand.Parameters.AddWithValue("@fecha", DateTime.Now.Date);
@@ -538,7 +554,7 @@ namespace ComercializadoraVerdum
 
                                 int canastas = Convert.ToInt32(row.Cells["Canastas"].Value);
                                 double pesoBruto = Convert.ToDouble(row.Cells["PesoBruto"].Value);
-                                int cantidad = Convert.ToInt32(row.Cells["Cantidad"].Value);
+                                double cantidad = Convert.ToDouble(row.Cells["Cantidad"].Value);
 
                                 decimal valortotal;
                                 if (row.Cells["Total"].Value is string totalString)
@@ -594,6 +610,7 @@ namespace ComercializadoraVerdum
                         }
 
                         GenerarNuevaFactura();
+                        _historial.ImprimirFacturaCompra(ventaId);
                         MessageBox.Show("Venta registrada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)

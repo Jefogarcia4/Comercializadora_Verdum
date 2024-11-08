@@ -16,7 +16,10 @@ namespace ComercializadoraVerdum
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FrmHome());
+
+            // Crear instancia de Historial y pasarla al constructor de FrmHome
+            Historial historial = new Historial(); // Asegúrate de inicializarlo correctamente
+            Application.Run(new FrmHome(historial));
         }
     }
 }
