@@ -151,7 +151,7 @@ namespace ComercializadoraVerdum
             DateTime selectedDate = datePickerStart.Value;
             string cliente = txtCliente.Text;
 
-            string filterQuery = "1=1"; 
+            string filterQuery = "1=1";
             if (datePickerStart.Value != null)
             {
                 filterQuery += $" AND Fecha = #{selectedDate:MM-dd-yyyy}#";
@@ -217,7 +217,7 @@ namespace ComercializadoraVerdum
                     int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
                     ObtenerDetallesVenta(ventaId);
                 }
-            }      
+            }
         }
         public void ImprimirFacturaCompra(int ventaId)
         {
@@ -225,12 +225,13 @@ namespace ComercializadoraVerdum
             decimal totalVenta = 0;
             decimal totalPeso = 0;
             string query = @"
-            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.PesoBruto, dv.ValorTotal
-            FROM ((DetalleVentas dv
-            INNER JOIN Productos p ON dv.ProductoId = p.Id)
-            INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
-            INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
-            WHERE dv.VentaId = ?";
+                    SELECT p.Nombre, dv.Precio, SUM(dv.Canastas) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal
+                    FROM ((DetalleVentas dv
+                    INNER JOIN Productos p ON dv.ProductoId = p.Id)
+                    INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
+                    INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
+                    WHERE dv.VentaId = ?
+                    GROUP BY p.Nombre, dv.Precio";
 
             _detalleventas = new List<DetalleVenta>();
 
@@ -247,16 +248,15 @@ namespace ComercializadoraVerdum
                         {
                             while (reader.Read())
                             {
-                                var detalle = new DetalleVenta
-                                {
-                                    DetalleVentaId = reader.GetInt32(0),
-                                    Nombre = reader.GetString(1),
-                                    Precio = reader.GetInt32(2),
-                                    PesoBruto = reader.GetInt32(3),
-                                    ValorTotal = reader.GetInt32(4)
-                                };
+
+                                var detalle = new DetalleVenta();
+                                detalle.Nombre = reader.GetString(0);
+                                detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
+                                detalle.PesoBruto = Convert.ToInt32(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
+                                detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
+
                                 _detalleventas.Add(detalle);
-                                totalVenta += detalle.ValorTotal;
+                                totalVenta += Convert.ToDecimal(detalle.ValorTotal);
                                 totalPeso += detalle.PesoBruto;
                             }
                             _totalvalorventa = $"${totalVenta.ToString("N0")}";
@@ -345,7 +345,7 @@ namespace ComercializadoraVerdum
                 {
                     resumenProductos[nombreProducto] = new List<(int Precio, int Peso, int ValorTotal)>();
                 }
-                resumenProductos[nombreProducto].Add((precio, peso,valorTotal));
+                resumenProductos[nombreProducto].Add((precio, peso, valorTotal));
             }
 
             // Agregar resumen al mensaje
@@ -432,7 +432,7 @@ namespace ComercializadoraVerdum
         {
             PrintDocument printDocument = (PrintDocument)sender;
 
-            float widthInInches = 7.2f / 2.54f; 
+            float widthInInches = 7.2f / 2.54f;
             float heightInInches = 20.99f / 2.54f;
 
             PaperSize customPaperSize = new PaperSize("CustomSize", (int)(widthInInches * 100), (int)(heightInInches * 100));
@@ -449,54 +449,54 @@ namespace ComercializadoraVerdum
             int offsetY = 25;
 
             int pageWidth = e.PageBounds.Width;
-            
+
             Image logo = Image.FromFile("Images/verdum-logo.png");
             if (logo != null)
             {
-                int logoWidth = 150;  
-                int logoX = (pageWidth - logoWidth) / 2;  
-                g.DrawImage(logo, logoX, startY, logoWidth, 150); 
-                offsetY += 160;  
+                int logoWidth = 80;
+                int logoX = (pageWidth - logoWidth) / 2;
+                g.DrawImage(logo, logoX, startY, logoWidth, 80);
+                offsetY += 60;
             }
 
             string prefacturaVenta = "PREFECTURA DE VENTA";
             float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold)).Width;
             float prefacturaVentaX = (pageWidth - prefacturaVentaWidth) / 2;
             g.DrawString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);
-            offsetY += 50;
+            offsetY += 20;
 
             string medellinColombia = "MEDELLIN - COLOMBIA";
             float medellinColombiaWidth = g.MeasureString(medellinColombia, new Font("Arial", 8, FontStyle.Bold)).Width;
             float medellinColombiaX = (pageWidth - medellinColombiaWidth) / 2;
             g.DrawString(medellinColombia, new Font("Arial", 8, FontStyle.Bold), brush, medellinColombiaX, startY + offsetY);
-            offsetY += 50;
+            offsetY += 20;
 
             string direccion = "DIRECCION: PLAZA MAYORISTA DE ANTIOQUIA";
             float direccionWidth = g.MeasureString(direccion, new Font("Arial", 8, FontStyle.Bold)).Width;
             float direccionX = (pageWidth - direccionWidth) / 2;
             g.DrawString(direccion, new Font("Arial", 8, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            offsetY += 50;
+            offsetY += 30;
 
             g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            offsetY += 25;
+            offsetY += 20;
 
             g.DrawString($"FECHA: {_fecha}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            offsetY += 50;
+            offsetY += 30;
 
             string comercializadoraText = "COMERCIALIZADORA VERDUM SAS";
             float comercializadoraTextWidth = g.MeasureString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold)).Width;
             float comercializadoraTextX = (pageWidth - comercializadoraTextWidth) / 2;
             g.DrawString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
-            offsetY += 50;
+            offsetY += 30;
 
             g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            offsetY += 50;
+            offsetY += 20;
 
             g.DrawString("PRODUCTO", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
             g.DrawString("PESO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 80, startY + offsetY);
             g.DrawString("PRECIO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 130, startY + offsetY);
             g.DrawString("VALOR", new Font("Arial", 9, FontStyle.Bold), brush, startX + 200, startY + offsetY);
-            offsetY += 25;
+            offsetY += 20;
 
             foreach (var detalle in _detalleventas)
             {
@@ -504,9 +504,9 @@ namespace ComercializadoraVerdum
                 g.DrawString(detalle.PesoBruto.ToString(), font, brush, startX + 80, startY + offsetY);
                 g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 130, startY + offsetY);
                 g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 200, startY + offsetY);
-                offsetY += 25;
+                offsetY += 20;
             }
-            offsetY += 50;
+            offsetY += 10;
 
             string totalLabel = "TOTAL VENTA:";
             g.DrawString(totalLabel, new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
@@ -519,11 +519,11 @@ namespace ComercializadoraVerdum
             float spaceWidth2 = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 300;
             g.DrawString(totalPesoValue, font, brush, startX + 95, startY + offsetY);
             g.DrawString(totalVentaText, font, brush, startX + 170 + g.MeasureString(totalPesoValue, font).Width, startY + offsetY);
-            offsetY += 50;
+            offsetY += 20;
 
             g.DrawString($"Fecha Generación Prefactura:", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 20, startY + offsetY);
-            offsetY += 20;
-            g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);       
+            offsetY += 15;
+            g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
         }
         private void ImprimirDocumento()
         {
@@ -533,7 +533,7 @@ namespace ComercializadoraVerdum
             PrintDialog printDialog = new PrintDialog
             {
                 Document = printDocument,
-                UseEXDialog = true 
+                UseEXDialog = true
             };
 
             if (printDialog.ShowDialog() == DialogResult.OK)
@@ -567,9 +567,9 @@ namespace ComercializadoraVerdum
         {
             public int DetalleVentaId { get; set; }
             public string Nombre { get; set; }
-            public int Precio { get; set; }
+            public decimal Precio { get; set; }
             public int PesoBruto { get; set; }
-            public int ValorTotal { get; set; }
+            public decimal ValorTotal { get; set; }
         }
     }
 }

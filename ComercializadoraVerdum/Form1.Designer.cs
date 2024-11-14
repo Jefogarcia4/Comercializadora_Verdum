@@ -62,6 +62,7 @@ namespace ComercializadoraVerdum
             this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             this.dataGridView1.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellValueChanged);
             this.dataGridView1.DefaultValuesNeeded += new System.Windows.Forms.DataGridViewRowEventHandler(this.dataGridView1_DefaultValuesNeeded);
+            this.dataGridView1.EditingControlShowing += new System.Windows.Forms.DataGridViewEditingControlShowingEventHandler(this.dataGridView1_EditingControlShowing);
             // 
             // lblNombreCliente
             // 
@@ -145,16 +146,19 @@ namespace ComercializadoraVerdum
             this.txtAbona.Name = "txtAbona";
             this.txtAbona.Size = new System.Drawing.Size(181, 20);
             this.txtAbona.TabIndex = 22;
+            this.txtAbona.TextChanged += new System.EventHandler(this.txtAbona_TextChanged);
+            this.txtAbona.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtAbona_KeyPress);
             // 
             // SaveButton
             // 
             this.SaveButton.BackColor = System.Drawing.Color.DarkSeaGreen;
+            this.SaveButton.Enabled = false;
             this.SaveButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.SaveButton.Location = new System.Drawing.Point(23, 497);
             this.SaveButton.Name = "SaveButton";
             this.SaveButton.Size = new System.Drawing.Size(379, 41);
             this.SaveButton.TabIndex = 17;
-            this.SaveButton.Text = "Guardar";
+            this.SaveButton.Text = "Registrar Venta";
             this.SaveButton.UseVisualStyleBackColor = false;
             this.SaveButton.Click += new System.EventHandler(this.SaveButton_Click);
             // 

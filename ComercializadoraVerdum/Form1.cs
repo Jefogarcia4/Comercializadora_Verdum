@@ -24,7 +24,7 @@ namespace ComercializadoraVerdum
         private int consecutivo = 0;
         private DateTime fechaActual;
         private IConfigurationRoot configuration;
-        private Dictionary<string, List<ProductoDetalle>> resumenProductos = new Dictionary<string, List<ProductoDetalle>>();
+        private Dictionary<(string producto, string precio), List<ProductoDetalle>> resumenProductos = new Dictionary<(string producto, string precio), List<ProductoDetalle>>();
 
 
 
@@ -44,16 +44,18 @@ namespace ComercializadoraVerdum
             this.Shown += new EventHandler(FrmHome_Shown);
             dataGridView1.CellEndEdit += dataGridView1_CellEndEdit;
             _historial = historial;
-            
+
         }
 
-        private void ScrollPanel() 
+        private void ScrollPanel()
         {
             Panel panel1 = new Panel();
             panel1.AutoScroll = true;
             grbResumenDeVenta.Controls.Add(panel1);
-            panel1.Controls.Add(lblResumenVenta); 
+            panel1.Controls.Add(lblResumenVenta);
         }
+
+        // Cambia el tipo de resumenProductos para usar una clave compuesta
 
         private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
@@ -77,16 +79,18 @@ namespace ComercializadoraVerdum
                 {
                     Precio = precio,
                     Canastas = canastas,
-                    PesoBruto = pesoBruto, 
+                    PesoBruto = pesoBruto,
                     Cantidad = cantidad,
                     Total = total
                 };
 
-                if (!resumenProductos.ContainsKey(producto))
+                var clave = (producto, precio);
+
+                if (!resumenProductos.ContainsKey(clave))
                 {
-                    resumenProductos[producto] = new List<ProductoDetalle>();
+                    resumenProductos[clave] = new List<ProductoDetalle>();
                 }
-                resumenProductos[producto].Add(detalle);
+                resumenProductos[clave].Add(detalle);
 
                 ActualizarResumenVentaLabel();
             }
@@ -95,23 +99,32 @@ namespace ComercializadoraVerdum
         private void ActualizarResumenVentaLabel()
         {
             StringBuilder resumenVenta = new StringBuilder();
+            var cultura = new CultureInfo("es-CO");
+            resumenVenta.AppendLine("Producto    | Precio    | Canastas   | Cantidad   | Valor");
+            resumenVenta.AppendLine("---------------------------------------------------------");
 
             foreach (var producto in resumenProductos)
             {
-                resumenVenta.AppendLine($"Producto: {producto.Key}");
+                string productoNombre = producto.Key.producto;
+                string precio = producto.Key.precio;
 
-                foreach (var detalle in producto.Value)
-                {
-                    resumenVenta.AppendLine($"  Valor: {detalle.Precio} -- Total Canastas: {detalle.Canastas} - Peso Bruto: {detalle.PesoBruto} - Cantidad: {detalle.Cantidad} - Total: {detalle.Total}");
-                }
+                // Sumamos los valores dentro del grupo de producto-precio
+                int totalCanastas = producto.Value.Sum(d => int.Parse(d.Canastas));
+                decimal totalPesoBruto = producto.Value.Sum(d => decimal.Parse(d.PesoBruto));
+                decimal totalCantidad = producto.Value.Sum(d => decimal.Parse(d.Cantidad));
+                decimal totalSumado = producto.Value.Sum(d =>
+                           decimal.Parse(d.Total.Replace("$", "")));
+
+
+                resumenVenta.AppendLine($"{productoNombre,-12}| {precio,-9}| {totalCanastas,-6}| {totalCantidad,-8}| {totalSumado.ToString("C0")}");
 
                 resumenVenta.AppendLine();
             }
 
             lblResumenVenta.Text = resumenVenta.ToString();
-
             AjustarAlturaResumenVenta();
         }
+
 
         private void AjustarAlturaResumenVenta()
         {
@@ -447,7 +460,7 @@ namespace ComercializadoraVerdum
                         }
 
 
-                            string abonoTexto = txtAbona.Text;
+                        string abonoTexto = txtAbona.Text;
                         string reemplazoabonoTexto = abonoTexto.Replace(".", "").Replace(",", "");
 
                         CultureInfo cultureColombia = new CultureInfo("es-CO");
@@ -456,12 +469,12 @@ namespace ComercializadoraVerdum
                         decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
 
                         if (decimal.TryParse(numero.ToString(), NumberStyles.Any, cultureColombia, out decimal totalValorCompra) &&
-                            decimal.TryParse(reemplazoabonoTexto, NumberStyles.Any, cultureColombia, out  abono))
+                            decimal.TryParse(reemplazoabonoTexto, NumberStyles.Any, cultureColombia, out abono))
                         {
                             if (abono > totalValorCompra)
                             {
                                 decimal cambio = abono - totalValorCompra;
-                                MessageBox.Show($"Devolver al cliente: {cambio.ToString("C", cultureColombia)}", "Venta Exitosa",MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                MessageBox.Show($"Devolver al cliente: {cambio.ToString("C", cultureColombia)}", "Venta Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
                             else if (abono == totalValorCompra)
                             {
@@ -470,12 +483,12 @@ namespace ComercializadoraVerdum
                             else
                             {
                                 decimal deuda = totalValorCompra - abono;
-                                MessageBox.Show($"El cliente queda debiendo: {deuda.ToString("C", cultureColombia)}", "Pendiente por Pagar",MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                MessageBox.Show($"El cliente queda debiendo: {deuda.ToString("C", cultureColombia)}", "Pendiente por Pagar", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 ActualizarSaldoClienteEnContra(txtCliente.Text, totalValorCompra, deuda, abono);
                             }
                         }
 
-                    
+
 
 
                         string fechaActual = DateTime.Now.ToString("yyyyMMdd");
@@ -540,11 +553,11 @@ namespace ComercializadoraVerdum
                                 decimal precio;
                                 if (row.Cells["Precio"].Value is string precioString)
                                 {
-                                    string valorNumerico = precioString.Replace("$", "").Replace(",", "").Trim();
+                                    string valorNumerico = precioString.Replace("$", "").Trim();
                                     if (!decimal.TryParse(valorNumerico, out precio))
                                     {
                                         MessageBox.Show($"Error al convertir el precio en la fila {row.Index + 1}.");
-                                        continue; 
+                                        continue;
                                     }
                                 }
                                 else
@@ -559,11 +572,11 @@ namespace ComercializadoraVerdum
                                 decimal valortotal;
                                 if (row.Cells["Total"].Value is string totalString)
                                 {
-                                    string valorNumericoTotal = totalString.Replace("$", "").Replace(",", "").Trim();
+                                    string valorNumericoTotal = totalString.Replace("$", "").Trim();
                                     if (!decimal.TryParse(valorNumericoTotal, out valortotal))
                                     {
                                         MessageBox.Show($"Error al convertir el total en la fila {row.Index + 1}.");
-                                        continue; 
+                                        continue;
                                     }
                                 }
                                 else
@@ -803,6 +816,7 @@ namespace ComercializadoraVerdum
                 CalculateTotalSum();
             }
 
+
             if (e.ColumnIndex == dataGridView1.Columns["Producto"].Index && e.RowIndex >= 0)
             {
                 var productId = dataGridView1.Rows[e.RowIndex].Cells["Producto"].Value;
@@ -960,6 +974,67 @@ namespace ComercializadoraVerdum
             public string PesoBruto { get; set; }
             public string Cantidad { get; set; }
             public string Total { get; set; }
+        }
+
+        private void txtAbona_TextChanged(object sender, EventArgs e)
+        {
+            if (txtAbona.Text != string.Empty)
+            {
+                decimal valorPagado = decimal.Parse(txtAbona.Text);
+                if (valorPagado < 0)
+                {
+                    SaveButton.Enabled = false;
+                }
+                else
+                {
+                    SaveButton.Enabled = true;
+                }
+
+            }
+            else
+            {
+                SaveButton.Enabled = false;
+            }
+
+        }
+
+        private void txtAbona_KeyPress(object sender, KeyPressEventArgs e)
+        {
+
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true;
+            }
+
+           
+        }
+
+        private void dataGridView1_EditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs e)
+        {
+            // Verifica si la columna es "Canasta P. KG" o "Cantidad"
+            if (dataGridView1.CurrentCell.ColumnIndex >= 0 &&
+                (dataGridView1.Columns[dataGridView1.CurrentCell.ColumnIndex].Name == "Canasta P. KG" ||
+                 dataGridView1.Columns[dataGridView1.CurrentCell.ColumnIndex].Name == "PesoBruto"))
+            {
+                // Obtiene el control de edición actual
+                if (e.Control is TextBox textBox)
+                {
+                    // Elimina cualquier suscripción anterior para evitar múltiples llamadas
+                    textBox.KeyPress -= TextBox_KeyPress;
+                    // Agrega el evento KeyPress para manejar el reemplazo
+                    textBox.KeyPress += TextBox_KeyPress;
+                }
+            }
+        }
+
+        private void TextBox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            // Si el usuario presiona el punto
+            if (e.KeyChar == '.')
+            {
+                // Reemplaza el punto por una coma
+                e.KeyChar = ',';
+            }
         }
     }
 }
