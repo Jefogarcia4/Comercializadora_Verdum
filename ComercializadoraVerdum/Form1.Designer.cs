@@ -57,7 +57,7 @@ namespace ComercializadoraVerdum
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Location = new System.Drawing.Point(11, 68);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(766, 241);
+            this.dataGridView1.Size = new System.Drawing.Size(622, 161);
             this.dataGridView1.TabIndex = 2;
             this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             this.dataGridView1.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellValueChanged);
@@ -80,7 +80,7 @@ namespace ComercializadoraVerdum
             this.txtCliente.Location = new System.Drawing.Point(112, 34);
             this.txtCliente.Multiline = true;
             this.txtCliente.Name = "txtCliente";
-            this.txtCliente.Size = new System.Drawing.Size(583, 27);
+            this.txtCliente.Size = new System.Drawing.Size(443, 27);
             this.txtCliente.TabIndex = 10;
             this.txtCliente.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtCliente_KeyDown);
             this.txtCliente.Leave += new System.EventHandler(this.txtCliente_Leave);
@@ -89,7 +89,7 @@ namespace ComercializadoraVerdum
             // 
             this.btnLimpiar.BackColor = System.Drawing.SystemColors.Control;
             this.btnLimpiar.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnLimpiar.Location = new System.Drawing.Point(701, 34);
+            this.btnLimpiar.Location = new System.Drawing.Point(558, 34);
             this.btnLimpiar.Name = "btnLimpiar";
             this.btnLimpiar.Size = new System.Drawing.Size(75, 27);
             this.btnLimpiar.TabIndex = 12;
@@ -116,7 +116,7 @@ namespace ComercializadoraVerdum
             this.groupBox1.Controls.Add(this.lblNombreCliente);
             this.groupBox1.Location = new System.Drawing.Point(12, 4);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(785, 322);
+            this.groupBox1.Size = new System.Drawing.Size(641, 234);
             this.groupBox1.TabIndex = 16;
             this.groupBox1.TabStop = false;
             // 
@@ -142,9 +142,9 @@ namespace ComercializadoraVerdum
             // 
             // txtAbona
             // 
-            this.txtAbona.Location = new System.Drawing.Point(606, 468);
+            this.txtAbona.Location = new System.Drawing.Point(501, 379);
             this.txtAbona.Name = "txtAbona";
-            this.txtAbona.Size = new System.Drawing.Size(181, 20);
+            this.txtAbona.Size = new System.Drawing.Size(151, 20);
             this.txtAbona.TabIndex = 22;
             this.txtAbona.TextChanged += new System.EventHandler(this.txtAbona_TextChanged);
             this.txtAbona.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtAbona_KeyPress);
@@ -154,9 +154,9 @@ namespace ComercializadoraVerdum
             this.SaveButton.BackColor = System.Drawing.Color.DarkSeaGreen;
             this.SaveButton.Enabled = false;
             this.SaveButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SaveButton.Location = new System.Drawing.Point(23, 497);
+            this.SaveButton.Location = new System.Drawing.Point(23, 403);
             this.SaveButton.Name = "SaveButton";
-            this.SaveButton.Size = new System.Drawing.Size(379, 41);
+            this.SaveButton.Size = new System.Drawing.Size(309, 41);
             this.SaveButton.TabIndex = 17;
             this.SaveButton.Text = "Registrar Venta";
             this.SaveButton.UseVisualStyleBackColor = false;
@@ -166,7 +166,7 @@ namespace ComercializadoraVerdum
             // 
             this.lblAbona.AutoSize = true;
             this.lblAbona.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblAbona.Location = new System.Drawing.Point(482, 465);
+            this.lblAbona.Location = new System.Drawing.Point(376, 376);
             this.lblAbona.Name = "lblAbona";
             this.lblAbona.Size = new System.Drawing.Size(128, 24);
             this.lblAbona.TabIndex = 21;
@@ -176,9 +176,9 @@ namespace ComercializadoraVerdum
             // 
             this.buttonHistorial.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.buttonHistorial.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonHistorial.Location = new System.Drawing.Point(408, 496);
+            this.buttonHistorial.Location = new System.Drawing.Point(338, 403);
             this.buttonHistorial.Name = "buttonHistorial";
-            this.buttonHistorial.Size = new System.Drawing.Size(379, 42);
+            this.buttonHistorial.Size = new System.Drawing.Size(315, 42);
             this.buttonHistorial.TabIndex = 18;
             this.buttonHistorial.Text = "Historial";
             this.buttonHistorial.UseVisualStyleBackColor = false;
@@ -188,7 +188,7 @@ namespace ComercializadoraVerdum
             // 
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(18, 468);
+            this.label3.Location = new System.Drawing.Point(16, 379);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(56, 24);
             this.label3.TabIndex = 19;
@@ -198,7 +198,7 @@ namespace ComercializadoraVerdum
             // 
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(211, 496);
+            this.label4.Location = new System.Drawing.Point(211, 407);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(0, 24);
             this.label4.TabIndex = 20;
@@ -206,9 +206,9 @@ namespace ComercializadoraVerdum
             // grbResumenDeVenta
             // 
             this.grbResumenDeVenta.Controls.Add(this.panel1);
-            this.grbResumenDeVenta.Location = new System.Drawing.Point(12, 325);
+            this.grbResumenDeVenta.Location = new System.Drawing.Point(12, 236);
             this.grbResumenDeVenta.Name = "grbResumenDeVenta";
-            this.grbResumenDeVenta.Size = new System.Drawing.Size(785, 137);
+            this.grbResumenDeVenta.Size = new System.Drawing.Size(641, 137);
             this.grbResumenDeVenta.TabIndex = 23;
             this.grbResumenDeVenta.TabStop = false;
             // 
@@ -219,7 +219,7 @@ namespace ComercializadoraVerdum
             this.panel1.Controls.Add(this.lblResumenVenta);
             this.panel1.Location = new System.Drawing.Point(6, 7);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(773, 130);
+            this.panel1.Size = new System.Drawing.Size(627, 130);
             this.panel1.TabIndex = 18;
             // 
             // FrmHome
@@ -227,7 +227,7 @@ namespace ComercializadoraVerdum
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ButtonFace;
-            this.ClientSize = new System.Drawing.Size(801, 542);
+            this.ClientSize = new System.Drawing.Size(657, 448);
             this.Controls.Add(this.grbResumenDeVenta);
             this.Controls.Add(this.txtAbona);
             this.Controls.Add(this.SaveButton);

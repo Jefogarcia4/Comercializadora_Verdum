@@ -153,6 +153,9 @@
     <Content Include="Images\icono-factura-final.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Images\verdum-logo-icono.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Images\verdum-logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

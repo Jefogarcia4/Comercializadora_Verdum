@@ -40,7 +40,7 @@ namespace ComercializadoraVerdum
             LoadProductsIntoComboBox();
             InitializeDataGridView();
             SiguienteConsecutivo();
-            this.Icon = new Icon("Images/icono-factura-final.ico");
+            this.Icon = new Icon("Images/verdum-logo-icono.ico");
             this.Shown += new EventHandler(FrmHome_Shown);
             dataGridView1.CellEndEdit += dataGridView1_CellEndEdit;
             _historial = historial;
@@ -324,11 +324,18 @@ namespace ComercializadoraVerdum
             int rowIndex = dataGridView1.Rows.Add();
             DataGridViewRow newRow = dataGridView1.Rows[rowIndex];
             newRow.Cells["Canasta P. KG"].Value = 1.7;
+
             dataGridView1.Columns.Add("Canastas", "Canastas");
             dataGridView1.Columns.Add("PesoBruto", "PesoBruto");
             dataGridView1.Columns.Add("Cantidad", "Cantidad");
             dataGridView1.Columns.Add("Total", "Total");
 
+            dataGridView1.Columns["Canasta P. KG"].Width = 80;
+            dataGridView1.Columns["Producto"].Width = 80;
+            dataGridView1.Columns["Canastas"].Width = 80; 
+            dataGridView1.Columns["PesoBruto"].Width = 80; 
+            dataGridView1.Columns["Cantidad"].Width = 80;  
+            dataGridView1.Columns["Total"].Width = 80;
 
             DataGridViewTextBoxColumn isSavedColumn = new DataGridViewTextBoxColumn
             {
@@ -528,10 +535,10 @@ namespace ComercializadoraVerdum
                             ventaCommand.Parameters.AddWithValue("@totalproductos", 0);
                             ventaCommand.Parameters.AddWithValue("@totalcanastas", 0);
                             ventaCommand.Parameters.AddWithValue("@totalpesobruto", 0);
-                            ventaCommand.Parameters.AddWithValue("@totalcompra", 0);
+                            ventaCommand.Parameters.AddWithValue("@totalcompra", totalValorCompra);
                             ventaCommand.Parameters.AddWithValue("@descuento", 0);
-                            ventaCommand.Parameters.AddWithValue("@totalabona", abono);
-                            ventaCommand.Parameters.AddWithValue("@totalpagar", total);
+                            ventaCommand.Parameters.AddWithValue("@totalabona", 0);
+                            ventaCommand.Parameters.AddWithValue("@totalpagar", abono);
                             ventaCommand.Parameters.AddWithValue("@fecha", DateTime.Now.Date);
 
                             ventaCommand.ExecuteNonQuery();
@@ -730,11 +737,11 @@ namespace ComercializadoraVerdum
 
                     if (rowsAffected > 0)
                     {
-                        MessageBox.Show("El saldo del cliente ha sido actualizado correctamente.", "Actualizado!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        //MessageBox.Show("El saldo del cliente ha sido actualizado correctamente.", "Actualizado!", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
-                        MessageBox.Show("No se pudo actualizar el saldo del cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        //MessageBox.Show("No se pudo actualizar el saldo del cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
             }
