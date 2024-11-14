@@ -24,6 +24,8 @@ namespace ComercializadoraVerdum
         private PrintPreviewDialog printPreviewDialog = new PrintPreviewDialog();
         private string _consecutivo, _fecha, _nombreCliente, _totalvalorventa, _totalpeso;
         private List<DetalleVenta> _detalleventas;
+        private int offsetY = 10; 
+        private bool isNewPage = true; 
         public Historial()
         {
             this.Icon = new Icon("Images/icono-factura-final.ico");
@@ -433,7 +435,8 @@ namespace ComercializadoraVerdum
             PrintDocument printDocument = (PrintDocument)sender;
 
             float widthInInches = 7.2f / 2.54f;
-            float heightInInches = 20.99f / 2.54f;
+            float heightInInches = 12.99f / 2.54f;
+            float topeInChes = 20.99f / 2.54f;
 
             PaperSize customPaperSize = new PaperSize("CustomSize", (int)(widthInInches * 100), (int)(heightInInches * 100));
             printDocument.DefaultPageSettings.PaperSize = customPaperSize;
@@ -449,6 +452,7 @@ namespace ComercializadoraVerdum
             int offsetY = 25;
 
             int pageWidth = e.PageBounds.Width;
+            int pageHeight = e.PageBounds.Height;
 
             Image logo = Image.FromFile("Images/verdum-logo.png");
             if (logo != null)
@@ -505,6 +509,7 @@ namespace ComercializadoraVerdum
                 g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 130, startY + offsetY);
                 g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 200, startY + offsetY);
                 offsetY += 20;
+                
             }
             offsetY += 10;
 
@@ -523,7 +528,7 @@ namespace ComercializadoraVerdum
 
             g.DrawString($"Fecha Generación Prefactura:", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 20, startY + offsetY);
             offsetY += 15;
-            g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
+            g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 15, startY + offsetY);
         }
         private void ImprimirDocumento()
         {
