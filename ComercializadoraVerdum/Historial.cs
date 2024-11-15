@@ -36,7 +36,14 @@ namespace ComercializadoraVerdum
             InitializeDataGridView();
             SetButtonImageFromUrl();
         }
-
+        public class DetalleVenta
+        {
+            public int DetalleVentaId { get; set; }
+            public string Nombre { get; set; }
+            public decimal Precio { get; set; }
+            public decimal PesoBruto { get; set; }
+            public decimal ValorTotal { get; set; }
+        }
         private void InitializeDatabaseConnection()
         {
 
@@ -106,46 +113,11 @@ namespace ComercializadoraVerdum
 
             LoadData();
         }
-
-        //private void dataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
-        //{
-        //    if (dataGridView1.Columns[e.ColumnIndex].Name == "Saldar Deuda")
-        //    {
-        //        string nombreCliente = dataGridView1.Rows[e.RowIndex].Cells["nombreCliente"].Value.ToString();
-
-        //        if (!saldoDeudasCache.ContainsKey(nombreCliente))
-        //        {
-        //            decimal saldoDeuda = ObtenerSaldoDeuda(nombreCliente);
-        //            saldoDeudasCache[nombreCliente] = saldoDeuda;
-        //        }
-
-        //        decimal saldo = saldoDeudasCache[nombreCliente];
-
-        //        e.Value = saldo > 0 ? "Saldar Deuda" : "";  
-        //    }
-        //}
-        private decimal ObtenerSaldoDeuda(string nombreCliente)
+        private void Historial_Load(object sender, EventArgs e)
         {
-            decimal saldoDeuda = 0;
-            try
-            {
-                string connectionString = configuration.GetConnectionString("DefaultConnection");
-                using (var connection = new OleDbConnection(connectionString))
-                {
-                    connection.Open();
-                    string query = "SELECT SaldoDeuda FROM Clientes WHERE NombreCliente = ?";
-                    using (var command = new OleDbCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("?", nombreCliente);
-                        saldoDeuda = (decimal)command.ExecuteScalar();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al obtener saldoDeuda: {ex.Message}");
-            }
-            return saldoDeuda;
+            this.Size = new Size(1096, 589);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
         }
         private void LoadData(string filterQuery = "")
         {
@@ -200,6 +172,44 @@ namespace ComercializadoraVerdum
                 connection.Close();
             }
         }
+        private void DataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Imprimir")
+                {
+                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+                    int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
+                    _fecha = row.Cells["Fecha"].Value.ToString();
+                    _consecutivo = row.Cells["Consecutivo"].Value.ToString();
+                    _nombreCliente = row.Cells["NombreCliente"].Value.ToString();
+                    ImprimirFacturaCompra(ventaId);
+                }
+                if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Detalle Venta")
+                {
+                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+                    int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
+                    ObtenerDetallesVenta(ventaId);
+                }
+                if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Saldar Deuda")
+                {
+                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+                    int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
+                    string nombreCliente = row.Cells["NombreCliente"].Value.ToString();
+                    SaldarDeuda(nombreCliente, ventaId);
+                }
+            }
+        }
+        private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                if (e.ColumnIndex <= 10)
+                {
+                    MessageBox.Show("Solo se permite Imprimir o ver el Detalle de una Venta.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
         private void BtnFiltrar_Click(object sender, EventArgs e)
         {
             if (datePickerStart.Value == null && string.IsNullOrWhiteSpace(txtCliente.Text))
@@ -222,6 +232,232 @@ namespace ComercializadoraVerdum
             }
 
             LoadData(filterQuery);
+        }
+        private void btnRefrescar_Click(object sender, EventArgs e)
+        {
+            LoadData();
+            txtCliente.Text = "";
+            datePickerStart.Value = DateTime.Now;
+        }
+        private void btnVolver_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+        private void PrintDocument_BeginPrint(object sender, PrintEventArgs e)
+        {
+            PrintDocument printDocument = (PrintDocument)sender;
+
+            float widthInInches = 7.2f / 2.54f;
+            float heightInInches = 10.99f / 2.54f;
+            float topeInChes = 20.99f / 2.54f;
+
+            PaperSize customPaperSize = new PaperSize("CustomSize", (int)(widthInInches * 100), (int)(heightInInches * 100));
+            printDocument.DefaultPageSettings.PaperSize = customPaperSize;
+        }
+        private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Font font = new Font("Arial", 9);
+            Brush brush = Brushes.Black;
+            int startX = 10;
+            int startY = 10;
+            int offsetY = 25;
+
+            int pageWidth = e.PageBounds.Width;
+            int pageHeight = e.PageBounds.Height;
+
+            Image logo = Image.FromFile("Images/verdum-logo.png");
+            if (logo != null)
+            {
+                int logoWidth = 80;
+                int logoX = (pageWidth - logoWidth) / 2;
+                g.DrawImage(logo, logoX, startY, logoWidth, 80);
+                offsetY += 60;
+            }
+
+            string prefacturaVenta = "PREFECTURA DE VENTA";
+            float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold)).Width;
+            float prefacturaVentaX = (pageWidth - prefacturaVentaWidth) / 2;
+            g.DrawString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);
+            offsetY += 15;
+
+            string medellinColombia = "MEDELLIN - COLOMBIA";
+            float medellinColombiaWidth = g.MeasureString(medellinColombia, new Font("Arial", 8, FontStyle.Bold)).Width;
+            float medellinColombiaX = (pageWidth - medellinColombiaWidth) / 2;
+            g.DrawString(medellinColombia, new Font("Arial", 8, FontStyle.Bold), brush, medellinColombiaX, startY + offsetY);
+            offsetY += 15;
+
+            string direccion = "DIRECCION: PLAZA MAYORISTA DE ANTIOQUIA";
+            float direccionWidth = g.MeasureString(direccion, new Font("Arial", 8, FontStyle.Bold)).Width;
+            float direccionX = (pageWidth - direccionWidth) / 2;
+            g.DrawString(direccion, new Font("Arial", 8, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            offsetY += 20;
+
+            g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            offsetY += 15;
+
+            g.DrawString($"FECHA: {_fecha}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            offsetY += 20;
+
+            string comercializadoraText = "COMERCIALIZADORA VERDUM SAS";
+            float comercializadoraTextWidth = g.MeasureString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold)).Width;
+            float comercializadoraTextX = (pageWidth - comercializadoraTextWidth) / 2;
+            g.DrawString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
+            offsetY += 20;
+
+            g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            offsetY += 15;
+
+            g.DrawString("PRODUCTO", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            g.DrawString("PESO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 80, startY + offsetY);
+            g.DrawString("PRECIO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 130, startY + offsetY);
+            g.DrawString("VALOR", new Font("Arial", 9, FontStyle.Bold), brush, startX + 200, startY + offsetY);
+            offsetY += 15;
+
+            foreach (var detalle in _detalleventas)
+            {
+                g.DrawString(detalle.Nombre, font, brush, direccionX, startY + offsetY);
+                g.DrawString(detalle.PesoBruto.ToString("N1"), font, brush, startX + 80, startY + offsetY);
+                g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 130, startY + offsetY);
+                g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 200, startY + offsetY);
+                offsetY += 15;
+
+            }
+            offsetY += 10;
+
+            string totalLabel = "TOTAL VENTA:";
+            g.DrawString(totalLabel, new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            float totalLabelWidth = g.MeasureString(totalLabel, new Font("Arial", 14, FontStyle.Bold)).Width;
+
+            string totalPesoValue = _totalpeso;
+            string totalVentaText = _totalvalorventa;
+
+            float spaceWidth = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 440;
+            float spaceWidth2 = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 300;
+            g.DrawString(totalPesoValue, font, brush, startX + 95, startY + offsetY);
+            g.DrawString(totalVentaText, font, brush, startX + 170 + g.MeasureString(totalPesoValue, font).Width, startY + offsetY);
+            offsetY += 15;
+
+            g.DrawString($"Fecha Generación Prefactura:", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 20, startY + offsetY);
+            offsetY += 15;
+            g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 15, startY + offsetY);
+        }
+        public void ImprimirFacturaCompra(int ventaId)
+        {
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
+            decimal totalVenta = 0;
+            decimal totalPeso = 0;
+            string query = @"
+                    SELECT p.Nombre, dv.Precio, SUM(dv.PesoBruto) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal
+                    FROM ((DetalleVentas dv
+                    INNER JOIN Productos p ON dv.ProductoId = p.Id)
+                    INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
+                    INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
+                    WHERE dv.VentaId = ?
+                    GROUP BY p.Nombre, dv.Precio";
+
+            _detalleventas = new List<DetalleVenta>();
+
+            using (OleDbConnection connection = new OleDbConnection(connectionString))
+            {
+                using (OleDbCommand command = new OleDbCommand(query, connection))
+                {
+                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
+
+                    try
+                    {
+                        connection.Open();
+                        using (OleDbDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+
+                                var detalle = new DetalleVenta();
+                                detalle.Nombre = reader.GetString(0);
+                                detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
+                                detalle.PesoBruto = Convert.ToDecimal(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
+                                detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
+
+                                _detalleventas.Add(detalle);
+                                totalVenta += Convert.ToDecimal(detalle.ValorTotal);
+                                totalPeso += detalle.PesoBruto;
+                            }
+                            _totalvalorventa = $"${totalVenta.ToString("N0")}";
+                            _totalpeso = totalPeso.ToString("N1");
+                            printPreviewDialog.ShowDialog();
+                            //printDocument.Print();
+                            //MessageBox.Show("Se Imprimió correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            //ImprimirDocumento();
+                            //
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error: {ex.Message}");
+                    }
+                }
+            }
+        }
+        private void ImprimirDocumento()
+        {
+            PrintDocument printDocument = new PrintDocument();
+            printDocument.PrintPage += PrintDocument_PrintPage;
+
+            PrintDialog printDialog = new PrintDialog
+            {
+                Document = printDocument,
+                UseEXDialog = true
+            };
+
+            if (printDialog.ShowDialog() == DialogResult.OK)
+            {
+                if (printDialog.PrinterSettings.PrinterName == "Microsoft Print to PDF")
+                {
+                    SaveFileDialog saveFileDialog = new SaveFileDialog
+                    {
+                        Filter = "PDF Files (*.pdf)|*.pdf",
+                        Title = "Guardar como PDF",
+                        FileName = $"FacturaDeVenta_{DateTime.Now.ToString("yyyy-MM-dd")}"
+                    };
+
+                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        printDocument.PrinterSettings.PrinterName = "Microsoft Print to PDF";
+                        printDocument.PrinterSettings.PrintFileName = saveFileDialog.FileName;
+                        printDocument.PrinterSettings.PrintToFile = true;
+                        printDocument.Print();
+                    }
+                    MessageBox.Show("Se exportó correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    printDocument.Print();
+                    MessageBox.Show("Se exportó correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+        private decimal ObtenerSaldoDeuda(string nombreCliente)
+        {
+            decimal saldoDeuda = 0;
+            try
+            {
+                string connectionString = configuration.GetConnectionString("DefaultConnection");
+                using (var connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT SaldoDeuda FROM Clientes WHERE NombreCliente = ?";
+                    using (var command = new OleDbCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("?", nombreCliente);
+                        saldoDeuda = (decimal)command.ExecuteScalar();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al obtener saldoDeuda: {ex.Message}");
+            }
+            return saldoDeuda;
         }
         private void ConsultarDatos(DateTime fecha, string cliente)
         {
@@ -255,34 +491,6 @@ namespace ComercializadoraVerdum
                 finally
                 {
                     connection.Close();
-                }
-            }
-        }
-        private void DataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
-            {
-                if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Imprimir")
-                {
-                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
-                    int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
-                    _fecha = row.Cells["Fecha"].Value.ToString();
-                    _consecutivo = row.Cells["Consecutivo"].Value.ToString();
-                    _nombreCliente = row.Cells["NombreCliente"].Value.ToString();
-                    ImprimirFacturaCompra(ventaId);
-                }
-                if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Detalle Venta")
-                {
-                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
-                    int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
-                    ObtenerDetallesVenta(ventaId);
-                }
-                if (e.RowIndex >= 0 && dataGridView1.Columns[e.ColumnIndex].Name == "Saldar Deuda")
-                {
-                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
-                    int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
-                    string nombreCliente = row.Cells["NombreCliente"].Value.ToString();
-                    SaldarDeuda(nombreCliente, ventaId);
                 }
             }
         }
@@ -358,63 +566,7 @@ namespace ComercializadoraVerdum
             {
                 MessageBox.Show($"Error al saldar la deuda: {ex.Message}");
             }
-        }
-        public void ImprimirFacturaCompra(int ventaId)
-        {
-            string connectionString = configuration.GetConnectionString("DefaultConnection");
-            decimal totalVenta = 0;
-            decimal totalPeso = 0;
-            string query = @"
-                    SELECT p.Nombre, dv.Precio, SUM(dv.PesoBruto) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal
-                    FROM ((DetalleVentas dv
-                    INNER JOIN Productos p ON dv.ProductoId = p.Id)
-                    INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
-                    INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
-                    WHERE dv.VentaId = ?
-                    GROUP BY p.Nombre, dv.Precio";
-
-            _detalleventas = new List<DetalleVenta>();
-
-            using (OleDbConnection connection = new OleDbConnection(connectionString))
-            {
-                using (OleDbCommand command = new OleDbCommand(query, connection))
-                {
-                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
-
-                    try
-                    {
-                        connection.Open();
-                        using (OleDbDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-
-                                var detalle = new DetalleVenta();
-                                detalle.Nombre = reader.GetString(0);
-                                detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
-                                detalle.PesoBruto = Convert.ToDecimal(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
-                                detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
-                                
-                                _detalleventas.Add(detalle);
-                                totalVenta += Convert.ToDecimal(detalle.ValorTotal);
-                                totalPeso += detalle.PesoBruto;
-                            }
-                            _totalvalorventa = $"${totalVenta.ToString("N0")}";
-                            _totalpeso = totalPeso.ToString("N1");
-                            printPreviewDialog.ShowDialog();
-                            //printDocument.Print();
-                            //MessageBox.Show("Se Imprimió correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            //ImprimirDocumento();
-                            //
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error: {ex.Message}");
-                    }
-                }
-            }
-        }
+        }      
         private void ObtenerDetallesVenta(int ventaId)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -548,176 +700,23 @@ namespace ComercializadoraVerdum
                 MessageBox.Show("Ocurrió un error al descargar la imagen: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        private void Historial_Load(object sender, EventArgs e)
-        {
-            this.Size = new Size(1096, 589);
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
-        }
-        private void btnRefrescar_Click(object sender, EventArgs e)
-        {
-            LoadData();
-            txtCliente.Text = "";
-            datePickerStart.Value = DateTime.Now;
-        }
-        private void btnVolver_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-        private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
-        {
-            if (e.RowIndex >= 0)
-            {
-                if (e.ColumnIndex <= 10)
-                {
-                    MessageBox.Show("Solo se permite Imprimir o ver el Detalle de una Venta.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-        }
-        private void PrintDocument_BeginPrint(object sender, PrintEventArgs e)
-        {
-            PrintDocument printDocument = (PrintDocument)sender;
+       
+        //private void dataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        //{
+        //    if (dataGridView1.Columns[e.ColumnIndex].Name == "Saldar Deuda")
+        //    {
+        //        string nombreCliente = dataGridView1.Rows[e.RowIndex].Cells["nombreCliente"].Value.ToString();
 
-            float widthInInches = 7.2f / 2.54f;
-            float heightInInches = 10.99f / 2.54f;
-            float topeInChes = 20.99f / 2.54f;
+        //        if (!saldoDeudasCache.ContainsKey(nombreCliente))
+        //        {
+        //            decimal saldoDeuda = ObtenerSaldoDeuda(nombreCliente);
+        //            saldoDeudasCache[nombreCliente] = saldoDeuda;
+        //        }
 
-            PaperSize customPaperSize = new PaperSize("CustomSize", (int)(widthInInches * 100), (int)(heightInInches * 100));
-            printDocument.DefaultPageSettings.PaperSize = customPaperSize;
-        }
-        private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
-        {
-            Graphics g = e.Graphics;
-            Font font = new Font("Arial", 9);
-            Brush brush = Brushes.Black;
-            int startX = 10;
-            int startY = 10;
-            int offsetY = 25;
+        //        decimal saldo = saldoDeudasCache[nombreCliente];
 
-            int pageWidth = e.PageBounds.Width;
-            int pageHeight = e.PageBounds.Height;
-
-            Image logo = Image.FromFile("Images/verdum-logo.png");
-            if (logo != null)
-            {
-                int logoWidth = 80;
-                int logoX = (pageWidth - logoWidth) / 2;
-                g.DrawImage(logo, logoX, startY, logoWidth, 80);
-                offsetY += 60;
-            }
-
-            string prefacturaVenta = "PREFECTURA DE VENTA";
-            float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold)).Width;
-            float prefacturaVentaX = (pageWidth - prefacturaVentaWidth) / 2;
-            g.DrawString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);
-            offsetY += 15;
-
-            string medellinColombia = "MEDELLIN - COLOMBIA";
-            float medellinColombiaWidth = g.MeasureString(medellinColombia, new Font("Arial", 8, FontStyle.Bold)).Width;
-            float medellinColombiaX = (pageWidth - medellinColombiaWidth) / 2;
-            g.DrawString(medellinColombia, new Font("Arial", 8, FontStyle.Bold), brush, medellinColombiaX, startY + offsetY);
-            offsetY += 15;
-
-            string direccion = "DIRECCION: PLAZA MAYORISTA DE ANTIOQUIA";
-            float direccionWidth = g.MeasureString(direccion, new Font("Arial", 8, FontStyle.Bold)).Width;
-            float direccionX = (pageWidth - direccionWidth) / 2;
-            g.DrawString(direccion, new Font("Arial", 8, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            offsetY += 20;
-
-            g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            offsetY += 15;
-
-            g.DrawString($"FECHA: {_fecha}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            offsetY += 20;
-
-            string comercializadoraText = "COMERCIALIZADORA VERDUM SAS";
-            float comercializadoraTextWidth = g.MeasureString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold)).Width;
-            float comercializadoraTextX = (pageWidth - comercializadoraTextWidth) / 2;
-            g.DrawString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
-            offsetY += 20;
-
-            g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            offsetY += 15;
-
-            g.DrawString("PRODUCTO", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            g.DrawString("PESO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 80, startY + offsetY);
-            g.DrawString("PRECIO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 130, startY + offsetY);
-            g.DrawString("VALOR", new Font("Arial", 9, FontStyle.Bold), brush, startX + 200, startY + offsetY);
-            offsetY += 15;
-
-            foreach (var detalle in _detalleventas)
-            {
-                g.DrawString(detalle.Nombre, font, brush, direccionX, startY + offsetY);
-                g.DrawString(detalle.PesoBruto.ToString("N1"), font, brush, startX + 80, startY + offsetY);
-                g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 130, startY + offsetY);
-                g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 200, startY + offsetY);
-                offsetY += 15;
-                
-            }
-            offsetY += 10;
-
-            string totalLabel = "TOTAL VENTA:";
-            g.DrawString(totalLabel, new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
-            float totalLabelWidth = g.MeasureString(totalLabel, new Font("Arial", 14, FontStyle.Bold)).Width;
-
-            string totalPesoValue = _totalpeso;
-            string totalVentaText = _totalvalorventa;
-
-            float spaceWidth = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 440;
-            float spaceWidth2 = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 300;
-            g.DrawString(totalPesoValue, font, brush, startX + 95, startY + offsetY);
-            g.DrawString(totalVentaText, font, brush, startX + 170 + g.MeasureString(totalPesoValue, font).Width, startY + offsetY);
-            offsetY += 15;
-
-            g.DrawString($"Fecha Generación Prefactura:", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 20, startY + offsetY);
-            offsetY += 15;
-            g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 15, startY + offsetY);
-        }
-        private void ImprimirDocumento()
-        {
-            PrintDocument printDocument = new PrintDocument();
-            printDocument.PrintPage += PrintDocument_PrintPage;
-
-            PrintDialog printDialog = new PrintDialog
-            {
-                Document = printDocument,
-                UseEXDialog = true
-            };
-
-            if (printDialog.ShowDialog() == DialogResult.OK)
-            {
-                if (printDialog.PrinterSettings.PrinterName == "Microsoft Print to PDF")
-                {
-                    SaveFileDialog saveFileDialog = new SaveFileDialog
-                    {
-                        Filter = "PDF Files (*.pdf)|*.pdf",
-                        Title = "Guardar como PDF",
-                        FileName = $"FacturaDeVenta_{DateTime.Now.ToString("yyyy-MM-dd")}"
-                    };
-
-                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        printDocument.PrinterSettings.PrinterName = "Microsoft Print to PDF";
-                        printDocument.PrinterSettings.PrintFileName = saveFileDialog.FileName;
-                        printDocument.PrinterSettings.PrintToFile = true;
-                        printDocument.Print();
-                    }
-                    MessageBox.Show("Se exportó correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    printDocument.Print();
-                    MessageBox.Show("Se exportó correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
-        }
-        public class DetalleVenta
-        {
-            public int DetalleVentaId { get; set; }
-            public string Nombre { get; set; }
-            public decimal Precio { get; set; }
-            public decimal PesoBruto { get; set; }
-            public decimal ValorTotal { get; set; }
-        }
+        //        e.Value = saldo > 0 ? "Saldar Deuda" : "";  
+        //    }
+        //}
     }
 }
