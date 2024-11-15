@@ -371,7 +371,7 @@ namespace ComercializadoraVerdum
                 {
                     // Cálculo de la cantidad
                     double cantidad = pesoBruto - (canastas * canastapkg);
-                    row.Cells["Cantidad"].Value = cantidad.ToString("N2", culturaColombiana);
+                    row.Cells["Cantidad"].Value = cantidad.ToString("N1", culturaColombiana);
 
                     // Cálculo del total si el precio es válido
                     if (row.Cells["Precio"].Value is string precioString)

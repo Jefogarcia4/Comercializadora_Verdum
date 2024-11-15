@@ -648,7 +648,7 @@ namespace ComercializadoraVerdum
             foreach (var detalle in _detalleventas)
             {
                 g.DrawString(detalle.Nombre, font, brush, direccionX, startY + offsetY);
-                g.DrawString(detalle.PesoBruto.ToString(), font, brush, startX + 80, startY + offsetY);
+                g.DrawString(detalle.PesoBruto.ToString("N1"), font, brush, startX + 80, startY + offsetY);
                 g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 130, startY + offsetY);
                 g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 200, startY + offsetY);
                 offsetY += 15;
@@ -716,7 +716,7 @@ namespace ComercializadoraVerdum
             public int DetalleVentaId { get; set; }
             public string Nombre { get; set; }
             public decimal Precio { get; set; }
-            public int PesoBruto { get; set; }
+            public decimal PesoBruto { get; set; }
             public decimal ValorTotal { get; set; }
         }
     }
