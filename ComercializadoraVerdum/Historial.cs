@@ -365,7 +365,7 @@ namespace ComercializadoraVerdum
             decimal totalVenta = 0;
             decimal totalPeso = 0;
             string query = @"
-                    SELECT p.Nombre, dv.Precio, SUM(dv.Canastas) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal
+                    SELECT p.Nombre, dv.Precio, SUM(dv.PesoBruto) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal
                     FROM ((DetalleVentas dv
                     INNER JOIN Productos p ON dv.ProductoId = p.Id)
                     INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
@@ -392,15 +392,15 @@ namespace ComercializadoraVerdum
                                 var detalle = new DetalleVenta();
                                 detalle.Nombre = reader.GetString(0);
                                 detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
-                                detalle.PesoBruto = Convert.ToInt32(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
+                                detalle.PesoBruto = Convert.ToDecimal(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
                                 detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
-
+                                
                                 _detalleventas.Add(detalle);
                                 totalVenta += Convert.ToDecimal(detalle.ValorTotal);
                                 totalPeso += detalle.PesoBruto;
                             }
                             _totalvalorventa = $"${totalVenta.ToString("N0")}";
-                            _totalpeso = totalPeso.ToString("N0");
+                            _totalpeso = totalPeso.ToString("N1");
                             printPreviewDialog.ShowDialog();
                             //printDocument.Print();
                             //MessageBox.Show("Se Imprimió correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);

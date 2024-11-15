@@ -1,23 +1,26 @@
-﻿using System;
+﻿using ComercializadoraVerdum;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace ComercializadoraVerdum
+namespace WindowsFormsApp
 {
     static class Program
     {
-        /// <summary>
-        /// Punto de entrada principal para la aplicación.
-        /// </summary>
         [STAThread]
         static void Main()
         {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+            IConfiguration configuration = builder.Build();
+
+            int numeroInstancias = configuration.GetValue<int>("ConnectionStrings:NumeroInstancias");
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
-            int numeroInstancias = 1;
 
             List<FrmHome> instanciasFrmHome = new List<FrmHome>();
 
@@ -33,5 +36,4 @@ namespace ComercializadoraVerdum
             Application.Run();
         }
     }
-
 }
