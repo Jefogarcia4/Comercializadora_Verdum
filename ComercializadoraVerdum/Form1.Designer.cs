@@ -45,11 +45,6 @@ namespace ComercializadoraVerdum
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.grbResumenDeVenta = new System.Windows.Forms.GroupBox();
-            this.lblDevuelta = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.rdbTransferencia = new System.Windows.Forms.RadioButton();
-            this.rdB_Efectivo = new System.Windows.Forms.RadioButton();
-            this.label1 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.lblTransferencia = new System.Windows.Forms.Label();
             this.txtAbonaTransferencia = new System.Windows.Forms.TextBox();
@@ -154,7 +149,6 @@ namespace ComercializadoraVerdum
             this.txtAbona.Size = new System.Drawing.Size(82, 20);
             this.txtAbona.TabIndex = 22;
             this.txtAbona.TextChanged += new System.EventHandler(this.txtAbona_TextChanged);
-            this.txtAbona.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtAbona_KeyPress);
             // 
             // SaveButton
             // 
@@ -213,73 +207,12 @@ namespace ComercializadoraVerdum
             // 
             // grbResumenDeVenta
             // 
-            this.grbResumenDeVenta.Controls.Add(this.lblDevuelta);
-            this.grbResumenDeVenta.Controls.Add(this.label2);
-            this.grbResumenDeVenta.Controls.Add(this.rdbTransferencia);
-            this.grbResumenDeVenta.Controls.Add(this.rdB_Efectivo);
-            this.grbResumenDeVenta.Controls.Add(this.label1);
             this.grbResumenDeVenta.Controls.Add(this.panel1);
             this.grbResumenDeVenta.Location = new System.Drawing.Point(12, 236);
             this.grbResumenDeVenta.Name = "grbResumenDeVenta";
             this.grbResumenDeVenta.Size = new System.Drawing.Size(641, 137);
             this.grbResumenDeVenta.TabIndex = 23;
             this.grbResumenDeVenta.TabStop = false;
-            // 
-            // lblDevuelta
-            // 
-            this.lblDevuelta.AutoSize = true;
-            this.lblDevuelta.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblDevuelta.Location = new System.Drawing.Point(412, 81);
-            this.lblDevuelta.Name = "lblDevuelta";
-            this.lblDevuelta.Size = new System.Drawing.Size(16, 17);
-            this.lblDevuelta.TabIndex = 24;
-            this.lblDevuelta.Text = "0";
-            this.lblDevuelta.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(348, 83);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(58, 15);
-            this.label2.TabIndex = 23;
-            this.label2.Text = "Devuelta:";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            // 
-            // rdbTransferencia
-            // 
-            this.rdbTransferencia.AutoSize = true;
-            this.rdbTransferencia.Location = new System.Drawing.Point(351, 52);
-            this.rdbTransferencia.Name = "rdbTransferencia";
-            this.rdbTransferencia.Size = new System.Drawing.Size(90, 17);
-            this.rdbTransferencia.TabIndex = 22;
-            this.rdbTransferencia.TabStop = true;
-            this.rdbTransferencia.Text = "Transferencia";
-            this.rdbTransferencia.UseVisualStyleBackColor = true;
-            // 
-            // rdB_Efectivo
-            // 
-            this.rdB_Efectivo.AutoSize = true;
-            this.rdB_Efectivo.Checked = true;
-            this.rdB_Efectivo.Location = new System.Drawing.Point(351, 29);
-            this.rdB_Efectivo.Name = "rdB_Efectivo";
-            this.rdB_Efectivo.Size = new System.Drawing.Size(64, 17);
-            this.rdB_Efectivo.TabIndex = 21;
-            this.rdB_Efectivo.TabStop = true;
-            this.rdB_Efectivo.Text = "Efectivo";
-            this.rdB_Efectivo.UseVisualStyleBackColor = true;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(348, 9);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(66, 15);
-            this.label1.TabIndex = 20;
-            this.label1.Text = "Tipo Pago:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // panel1
             // 
@@ -308,7 +241,6 @@ namespace ComercializadoraVerdum
             this.txtAbonaTransferencia.Size = new System.Drawing.Size(82, 20);
             this.txtAbonaTransferencia.TabIndex = 25;
             this.txtAbonaTransferencia.TextChanged += new System.EventHandler(this.txtAbonaTransferencia_TextChanged);
-            this.txtAbonaTransferencia.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtAbonaTransferencia_KeyPress);
             // 
             // FrmHome
             // 
@@ -334,7 +266,6 @@ namespace ComercializadoraVerdum
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.grbResumenDeVenta.ResumeLayout(false);
-            this.grbResumenDeVenta.PerformLayout();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);
@@ -360,11 +291,6 @@ namespace ComercializadoraVerdum
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.GroupBox grbResumenDeVenta;
         private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.RadioButton rdbTransferencia;
-        private System.Windows.Forms.RadioButton rdB_Efectivo;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label lblDevuelta;
         private System.Windows.Forms.Label lblTransferencia;
         private System.Windows.Forms.TextBox txtAbonaTransferencia;
     }

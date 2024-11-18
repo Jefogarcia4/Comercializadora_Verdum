@@ -424,15 +424,8 @@ namespace ComercializadoraVerdum
                 {
                     connection.Open();
                 }
-
-                if (string.IsNullOrWhiteSpace(txtCliente.Text) || string.IsNullOrWhiteSpace(txtAbona.Text))
-                {
-                    MessageBox.Show("Por favor, complete los campos Nombre Cliente y valor pagado.", "Campos requeridos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    LimpiarCampos();
-                }
-                else
-                {
-                    try
+                
+                try
                     {
                         decimal totalCompra = 0;
                         int totalCanastas = 0;
@@ -467,8 +460,8 @@ namespace ComercializadoraVerdum
                         }
 
 
-                        string abonoEfectivo = txtAbona.Text;
-                        string abonaTransaferencia = txtAbonaTransferencia.Text;
+                        string abonoEfectivo = txtAbona.Text == "" ? "0" : txtAbona.Text;
+                        string abonaTransaferencia = txtAbonaTransferencia.Text == "" ? "0" : txtAbonaTransferencia.Text;
 
                         decimal reemplazoAbono = decimal.Parse(abonoEfectivo, cultureColombia);
                         decimal reemplazoEfectivo = decimal.Parse(abonaTransaferencia, cultureColombia);
@@ -554,14 +547,39 @@ namespace ComercializadoraVerdum
                             ventaId = Convert.ToInt32(ventaCommand.ExecuteScalar());
                         }
 
-                        decimal valorEfectivo = 0;
-                        decimal valorTransferencia = 0;
-                        string tipoAbono = rdbTransferencia.Checked ? "Transferencia" : "Efectivo";
-                        if (txtAbona.Text != "0" && txtAbonaTransferencia.Text != "0")
+
+                        decimal valorEfectivo = string.IsNullOrWhiteSpace(txtAbona.Text) ? 0 : decimal.Parse(txtAbona.Text, CultureInfo.InvariantCulture);
+                        decimal valorTransferencia = string.IsNullOrWhiteSpace(txtAbonaTransferencia.Text) ? 0 : decimal.Parse(txtAbonaTransferencia.Text, CultureInfo.InvariantCulture);
+                        if (valorEfectivo > 0 && valorTransferencia <= 0)
                         {
-                            if(decimal.Parse(txtAbona.Text) > 0)
-                            valorEfectivo = decimal.Parse(txtAbona.Text);
-                            valorTransferencia = decimal.Parse(txtAbonaTransferencia.Text);
+                            string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                             "VALUES (?, ?, ?, ?)";
+                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                            {
+                                AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                                AbonoCommand.Parameters.AddWithValue("@TipoPago", "Efectivo");
+                                AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorEfectivo);
+                                AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                                AbonoCommand.ExecuteNonQuery();
+                            }
+                        }
+                        else if (valorTransferencia > 0 && valorEfectivo <= 0)
+                        {
+                            string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                                "VALUES (?, ?, ?, ?)";
+                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                            {
+                                AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                                AbonoCommand.Parameters.AddWithValue("@TipoPago", "Transferencia");
+                                AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorTransferencia);
+                                AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                                AbonoCommand.ExecuteNonQuery();
+                            }
+                        }
+                        else
+                        {
                             string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
                                                  "VALUES (?, ?, ?, ?)";
                             using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
@@ -574,7 +592,6 @@ namespace ComercializadoraVerdum
                                 AbonoCommand.ExecuteNonQuery();
                             }
 
-                            if (decimal.Parse(txtAbonaTransferencia.Text) > 0)
                             {
                                 string insertAbonoQuery2 = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
                                                  "VALUES (?, ?, ?, ?)";
@@ -589,22 +606,6 @@ namespace ComercializadoraVerdum
                                 }
                             }
                         }
-                        else
-                        {
-                            string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
-                                                 "VALUES (?, ?, ?, ?)";
-                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
-                            {
-                                AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
-                                AbonoCommand.Parameters.AddWithValue("@TipoPago", tipoAbono);
-                                AbonoCommand.Parameters.AddWithValue("@ValorAbono", abono);
-                                AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
-
-                                AbonoCommand.ExecuteNonQuery();
-                            }
-
-                        }
-
                         //Cierre Movimientos
 
                         foreach (DataGridViewRow row in dataGridView1.Rows)
@@ -702,7 +703,7 @@ namespace ComercializadoraVerdum
                         connection.Close();
                         LimpiarCampos();
                     }
-                }
+                
             }
             catch (Exception ex)
             {
@@ -1028,7 +1029,7 @@ namespace ComercializadoraVerdum
             dataGridView1.Rows.Clear();
             resumenProductos.Clear();
             lblResumenVenta.Text = "No se han agredado productos a la factura";
-            lblDevuelta.Text = "0";
+            //lblDevuelta.Text = "0";
             SiguienteConsecutivo();
         }
 
@@ -1053,10 +1054,6 @@ namespace ComercializadoraVerdum
                 }
                 else
                 {
-                    string valor1Texto = label3.Text.Replace("Total:", "");
-                    decimal valorventa = Convert.ToDecimal(valor1Texto);
-                    decimal devuelta = valorPagado - valorventa;
-                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
                     SaveButton.Enabled = true;
                 }
 
@@ -1066,6 +1063,38 @@ namespace ComercializadoraVerdum
                 SaveButton.Enabled = false;
             }
 
+        }
+
+        private void txtAbonaTransferencia_TextChanged(object sender, EventArgs e)
+        {
+            if (txtAbonaTransferencia.Text != string.Empty)
+            {
+
+                decimal valorPagado = decimal.Parse(txtAbonaTransferencia.Text);
+                if (valorPagado < 0)
+                {
+                    SaveButton.Enabled = false;
+                }
+                else
+                {
+                    SaveButton.Enabled = true;
+                }
+
+            }
+            else
+            {
+                SaveButton.Enabled = false;
+            }
+
+        }
+
+        private void TextBox_KeyPress(object sender, KeyPressEventArgs e) 
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true;
+                SaveButton.Enabled = true;
+            }
         }
 
         private void txtAbona_KeyPress(object sender, KeyPressEventArgs e)
@@ -1079,7 +1108,6 @@ namespace ComercializadoraVerdum
            
         }
 
-
         private void txtAbonaTransferencia_KeyPress(object sender, KeyPressEventArgs e)
         {
 
@@ -1088,56 +1116,6 @@ namespace ComercializadoraVerdum
                 e.Handled = true;
             }
 
-
-        }
-
-        private void txtAbonaTransferencia_TextChanged(object sender, EventArgs e)
-        {
-            decimal valorefectivo = 0;
-            if (txtAbonaTransferencia.Text != string.Empty)
-            {
-
-                decimal valorTransferencia = decimal.Parse(txtAbonaTransferencia.Text);
-                
-                if (txtAbona.Text != "")
-                {
-                    valorefectivo = decimal.Parse(txtAbona.Text); 
-                }
-                if (valorefectivo > 0 && valorTransferencia < 0)
-                {
-                    SaveButton.Enabled = false;
-                }
-                else if (valorefectivo == 0 && valorTransferencia > 0)
-                {
-                    string valor1Texto = label3.Text.Replace("Total:", "");
-                    decimal valorventa = Convert.ToDecimal(valor1Texto);
-                    decimal devuelta = valorTransferencia - valorventa;
-                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
-                    SaveButton.Enabled = true;
-                }
-                else if (valorefectivo > 0 && valorTransferencia > 0)
-                {
-                    string valor1Texto = label3.Text.Replace("Total:", "");
-                    decimal valorventa = Convert.ToDecimal(valor1Texto);
-                    decimal devuelta = (valorTransferencia + valorefectivo) - valorventa;
-                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
-                    SaveButton.Enabled = true;
-                }
-                
-                else
-                {
-                    string valor1Texto = lblDevuelta.Text;
-                    decimal valorventa = Convert.ToDecimal(valor1Texto);
-                    decimal devuelta = valorTransferencia - valorventa;
-                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
-                    SaveButton.Enabled = true;
-                }
-
-            }
-            else
-            {
-                SaveButton.Enabled = false;
-            }
 
         }
 
@@ -1164,11 +1142,6 @@ namespace ComercializadoraVerdum
                     textBox2.KeyPress += TextBox_KeyPress;
                 }
             }
-        }
-
-        private void TextBox_KeyPress(object sender, KeyPressEventArgs e)
-        {
-
         }
 
         private void lblAbona_Click(object sender, EventArgs e)
