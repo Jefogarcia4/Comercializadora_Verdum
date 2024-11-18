@@ -417,7 +417,7 @@ namespace ComercializadoraVerdum
 
         private void SaveButton_Click(object sender, EventArgs e)
         {
-
+            CultureInfo cultureColombia = new CultureInfo("es-CO");
             try
             {
                 if (connection.State != System.Data.ConnectionState.Open)
@@ -467,21 +467,28 @@ namespace ComercializadoraVerdum
                         }
 
 
-                        string abonoTexto = txtAbona.Text;
-                        string reemplazoabonoTexto = abonoTexto.Replace(".", "").Replace(",", "");
+                        string abonoEfectivo = txtAbona.Text;
+                        string abonaTransaferencia = txtAbonaTransferencia.Text;
 
-                        CultureInfo cultureColombia = new CultureInfo("es-CO");
+                        decimal reemplazoAbono = decimal.Parse(abonoEfectivo, cultureColombia);
+                        decimal reemplazoEfectivo = decimal.Parse(abonaTransaferencia, cultureColombia);
+
+                        // Suma los valores como decimales
+                        decimal sumaPagos = reemplazoAbono + reemplazoEfectivo;
+
+                        // Si necesitas el resultado como texto (con formato colombiano)
+                        string sumaPagosTexto = sumaPagos.ToString("N0", cultureColombia);
+
 
                         decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
                         decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
 
                         if (decimal.TryParse(numero.ToString(), NumberStyles.Any, cultureColombia, out decimal totalValorCompra) &&
-                            decimal.TryParse(reemplazoabonoTexto, NumberStyles.Any, cultureColombia, out abono))
+                            decimal.TryParse(sumaPagosTexto, NumberStyles.Any, cultureColombia, out abono))
                         {
                             if (abono > totalValorCompra)
                             {
                                 decimal cambio = abono - totalValorCompra;
-                                MessageBox.Show($"Devolver al cliente: {cambio.ToString("C", cultureColombia)}", "Venta Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
                             else if (abono == totalValorCompra)
                             {
@@ -546,6 +553,59 @@ namespace ComercializadoraVerdum
                             ventaCommand.CommandText = "SELECT @@IDENTITY";
                             ventaId = Convert.ToInt32(ventaCommand.ExecuteScalar());
                         }
+
+                        decimal valorEfectivo = 0;
+                        decimal valorTransferencia = 0;
+                        string tipoAbono = rdbTransferencia.Checked ? "Transferencia" : "Efectivo";
+                        if (txtAbona.Text != "0" && txtAbonaTransferencia.Text != "0")
+                        {
+                            if(decimal.Parse(txtAbona.Text) > 0)
+                            valorEfectivo = decimal.Parse(txtAbona.Text);
+                            valorTransferencia = decimal.Parse(txtAbonaTransferencia.Text);
+                            string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                                                 "VALUES (?, ?, ?, ?)";
+                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                            {
+                                AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                                AbonoCommand.Parameters.AddWithValue("@TipoPago", "Efectivo");
+                                AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorEfectivo);
+                                AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                                AbonoCommand.ExecuteNonQuery();
+                            }
+
+                            if (decimal.Parse(txtAbonaTransferencia.Text) > 0)
+                            {
+                                string insertAbonoQuery2 = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                                                 "VALUES (?, ?, ?, ?)";
+                                using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery2, connection))
+                                {
+                                    AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                                    AbonoCommand.Parameters.AddWithValue("@TipoPago", "Transferencia");
+                                    AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorTransferencia);
+                                    AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                                    AbonoCommand.ExecuteNonQuery();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                                                 "VALUES (?, ?, ?, ?)";
+                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                            {
+                                AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                                AbonoCommand.Parameters.AddWithValue("@TipoPago", tipoAbono);
+                                AbonoCommand.Parameters.AddWithValue("@ValorAbono", abono);
+                                AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                                AbonoCommand.ExecuteNonQuery();
+                            }
+
+                        }
+
+                        //Cierre Movimientos
 
                         foreach (DataGridViewRow row in dataGridView1.Rows)
                         {
@@ -950,10 +1010,6 @@ namespace ComercializadoraVerdum
         {
             e.Row.Cells["Canasta P. KG"].Value = 1.7;
         }
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
         private void FrmHome_Shown(object sender, EventArgs e)
         {
             this.BeginInvoke((MethodInvoker)delegate
@@ -965,12 +1021,14 @@ namespace ComercializadoraVerdum
         {
             txtCliente.Text = string.Empty;
             txtAbona.Text = string.Empty;
+            txtAbonaTransferencia.Text = string.Empty;
             btnLimpiar.Visible = false;
             txtCliente.Enabled = true;
             label3.Text = "Total: ";
             dataGridView1.Rows.Clear();
             resumenProductos.Clear();
             lblResumenVenta.Text = "No se han agredado productos a la factura";
+            lblDevuelta.Text = "0";
             SiguienteConsecutivo();
         }
 
@@ -987,6 +1045,7 @@ namespace ComercializadoraVerdum
         {
             if (txtAbona.Text != string.Empty)
             {
+              
                 decimal valorPagado = decimal.Parse(txtAbona.Text);
                 if (valorPagado < 0)
                 {
@@ -994,6 +1053,10 @@ namespace ComercializadoraVerdum
                 }
                 else
                 {
+                    string valor1Texto = label3.Text.Replace("Total:", "");
+                    decimal valorventa = Convert.ToDecimal(valor1Texto);
+                    decimal devuelta = valorPagado - valorventa;
+                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
                     SaveButton.Enabled = true;
                 }
 
@@ -1016,6 +1079,68 @@ namespace ComercializadoraVerdum
            
         }
 
+
+        private void txtAbonaTransferencia_KeyPress(object sender, KeyPressEventArgs e)
+        {
+
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true;
+            }
+
+
+        }
+
+        private void txtAbonaTransferencia_TextChanged(object sender, EventArgs e)
+        {
+            decimal valorefectivo = 0;
+            if (txtAbonaTransferencia.Text != string.Empty)
+            {
+
+                decimal valorTransferencia = decimal.Parse(txtAbonaTransferencia.Text);
+                
+                if (txtAbona.Text != "")
+                {
+                    valorefectivo = decimal.Parse(txtAbona.Text); 
+                }
+                if (valorefectivo > 0 && valorTransferencia < 0)
+                {
+                    SaveButton.Enabled = false;
+                }
+                else if (valorefectivo == 0 && valorTransferencia > 0)
+                {
+                    string valor1Texto = label3.Text.Replace("Total:", "");
+                    decimal valorventa = Convert.ToDecimal(valor1Texto);
+                    decimal devuelta = valorTransferencia - valorventa;
+                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
+                    SaveButton.Enabled = true;
+                }
+                else if (valorefectivo > 0 && valorTransferencia > 0)
+                {
+                    string valor1Texto = label3.Text.Replace("Total:", "");
+                    decimal valorventa = Convert.ToDecimal(valor1Texto);
+                    decimal devuelta = (valorTransferencia + valorefectivo) - valorventa;
+                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
+                    SaveButton.Enabled = true;
+                }
+                
+                else
+                {
+                    string valor1Texto = lblDevuelta.Text;
+                    decimal valorventa = Convert.ToDecimal(valor1Texto);
+                    decimal devuelta = valorTransferencia - valorventa;
+                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
+                    SaveButton.Enabled = true;
+                }
+
+            }
+            else
+            {
+                SaveButton.Enabled = false;
+            }
+
+        }
+
         private void dataGridView1_EditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs e)
         {
             // Verifica si la columna es "Canasta P. KG" o "Cantidad"
@@ -1031,17 +1156,24 @@ namespace ComercializadoraVerdum
                     // Agrega el evento KeyPress para manejar el reemplazo
                     textBox.KeyPress += TextBox_KeyPress;
                 }
+                if (e.Control is TextBox textBox2)
+                {
+                    // Elimina cualquier suscripción anterior para evitar múltiples llamadas
+                    textBox2.KeyPress -= TextBox_KeyPress;
+                    // Agrega el evento KeyPress para manejar el reemplazo
+                    textBox2.KeyPress += TextBox_KeyPress;
+                }
             }
         }
 
         private void TextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Si el usuario presiona el punto
-            if (e.KeyChar == '.')
-            {
-                // Reemplaza el punto por una coma
-                e.KeyChar = ',';
-            }
+
+        }
+
+        private void lblAbona_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

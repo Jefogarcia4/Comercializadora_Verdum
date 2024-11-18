@@ -36,14 +36,7 @@ namespace ComercializadoraVerdum
             InitializeDataGridView();
             SetButtonImageFromUrl();
         }
-        public class DetalleVenta
-        {
-            public int DetalleVentaId { get; set; }
-            public string Nombre { get; set; }
-            public decimal Precio { get; set; }
-            public decimal PesoBruto { get; set; }
-            public decimal ValorTotal { get; set; }
-        }
+
         private void InitializeDatabaseConnection()
         {
 
@@ -113,11 +106,46 @@ namespace ComercializadoraVerdum
 
             LoadData();
         }
-        private void Historial_Load(object sender, EventArgs e)
+
+        //private void dataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        //{
+        //    if (dataGridView1.Columns[e.ColumnIndex].Name == "Saldar Deuda")
+        //    {
+        //        string nombreCliente = dataGridView1.Rows[e.RowIndex].Cells["nombreCliente"].Value.ToString();
+
+        //        if (!saldoDeudasCache.ContainsKey(nombreCliente))
+        //        {
+        //            decimal saldoDeuda = ObtenerSaldoDeuda(nombreCliente);
+        //            saldoDeudasCache[nombreCliente] = saldoDeuda;
+        //        }
+
+        //        decimal saldo = saldoDeudasCache[nombreCliente];
+
+        //        e.Value = saldo > 0 ? "Saldar Deuda" : "";  
+        //    }
+        //}
+        private decimal ObtenerSaldoDeuda(string nombreCliente)
         {
-            this.Size = new Size(1096, 589);
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
+            decimal saldoDeuda = 0;
+            try
+            {
+                string connectionString = configuration.GetConnectionString("DefaultConnection");
+                using (var connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT SaldoDeuda FROM Clientes WHERE NombreCliente = ?";
+                    using (var command = new OleDbCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("?", nombreCliente);
+                        saldoDeuda = (decimal)command.ExecuteScalar();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al obtener saldoDeuda: {ex.Message}");
+            }
+            return saldoDeuda;
         }
         private void LoadData(string filterQuery = "")
         {
@@ -172,6 +200,64 @@ namespace ComercializadoraVerdum
                 connection.Close();
             }
         }
+        private void BtnFiltrar_Click(object sender, EventArgs e)
+        {
+            if (datePickerStart.Value == null && string.IsNullOrWhiteSpace(txtCliente.Text))
+            {
+                MessageBox.Show("Por favor, seleccione una Fecha o ingrese un Cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DateTime selectedDate = datePickerStart.Value;
+            string cliente = txtCliente.Text;
+
+            string filterQuery = "1=1";
+            if (datePickerStart.Value != null)
+            {
+                filterQuery += $" AND Fecha = #{selectedDate:MM-dd-yyyy}#";
+            }
+            if (!string.IsNullOrWhiteSpace(cliente))
+            {
+                filterQuery += $" AND NombreCliente = '{cliente}'";
+            }
+
+            LoadData(filterQuery);
+        }
+        private void ConsultarDatos(DateTime fecha, string cliente)
+        {
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
+
+            using (OleDbConnection connection = new OleDbConnection(connectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    string query = "SELECT * FROM Ventas " +
+                                   "WHERE Fecha = @Fecha AND NombreCliente LIKE @Cliente";
+
+                    using (OleDbCommand command = new OleDbCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Fecha", fecha.Date);
+                        command.Parameters.AddWithValue("@Cliente", "%" + cliente + "%");
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(command);
+                        DataTable dataTable = new DataTable();
+                        adapter.Fill(dataTable);
+
+                        dataGridView1.DataSource = dataTable;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ocurrió un error al consultar la base de datos: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
         private void DataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
@@ -200,38 +286,273 @@ namespace ComercializadoraVerdum
                 }
             }
         }
-        private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        private void SaldarDeuda(string nombreCliente, int ventaId)
         {
-            if (e.RowIndex >= 0)
+            var colombianCulture = new CultureInfo("es-CO");
+
+            decimal saldoDeuda = ObtenerSaldoDeuda(nombreCliente);
+
+            if (saldoDeuda <= 0)
             {
-                if (e.ColumnIndex <= 10)
+                MessageBox.Show($"El cliente: {nombreCliente} se encuentra al día. No tiene deuda pendiente.", "Sin Pendientes", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                string saldoPendiente = saldoDeuda.ToString("N2", colombianCulture);
+                DialogResult result = MessageBox.Show(
+                    $"Valor de la deuda: ${saldoPendiente}. Nombre Cliente: {nombreCliente}. ¿Deseas saldar la deuda pendiente?",
+                    "Saldar Deuda",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
                 {
-                    MessageBox.Show("Solo se permite Imprimir o ver el Detalle de una Venta.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    SaldarDeudaCliente(nombreCliente, saldoDeuda, ventaId);
                 }
             }
         }
-        private void BtnFiltrar_Click(object sender, EventArgs e)
+        private void SaldarDeudaCliente(string nombreCliente, decimal saldo, int ventaId)
         {
-            if (datePickerStart.Value == null && string.IsNullOrWhiteSpace(txtCliente.Text))
+            try
             {
-                MessageBox.Show("Por favor, seleccione una Fecha o ingrese un Cliente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                string connectionString = configuration.GetConnectionString("DefaultConnection");
+                using (var connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "UPDATE Clientes SET SaldoDeuda = 0 WHERE NombreCliente = ?";
+                    using (var command = new OleDbCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("?", nombreCliente);
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
+                        {
+                            //MessageBox.Show($"La deuda de {nombreCliente} ha sido saldada exitosamente.");
+                        }
+                        else
+                        {
+                            //MessageBox.Show("Error al saldar la deuda. Por favor, intenta nuevamente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+
+                    string query2 = "UPDATE Ventas SET TotalPagar = TotalCompra WHERE VentaId = ?";
+                    using (var command = new OleDbCommand(query2, connection))
+                    {
+                        command.Parameters.AddWithValue("?", ventaId);
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
+                        {
+                            MessageBox.Show($"La deuda del Cliente: {nombreCliente} ha sido saldada exitosamente.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            LoadData();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Error al saldar la deuda. Por favor, intenta nuevamente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al saldar la deuda: {ex.Message}");
+            }
+        }
+        public void ImprimirFacturaCompra(int ventaId)
+        {
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
+            decimal totalVenta = 0;
+            decimal totalPeso = 0;
+            string query = @"
+                    SELECT p.Nombre, dv.Precio, SUM(dv.Cantidad) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal
+                    FROM ((DetalleVentas dv
+                    INNER JOIN Productos p ON dv.ProductoId = p.Id)
+                    INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
+                    INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
+                    WHERE dv.VentaId = ?
+                    GROUP BY p.Nombre, dv.Precio";
+
+            _detalleventas = new List<DetalleVenta>();
+
+            using (OleDbConnection connection = new OleDbConnection(connectionString))
+            {
+                using (OleDbCommand command = new OleDbCommand(query, connection))
+                {
+                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
+
+                    try
+                    {
+                        connection.Open();
+                        using (OleDbDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+
+                                var detalle = new DetalleVenta();
+                                detalle.Nombre = reader.GetString(0);
+                                detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
+                                detalle.PesoBruto = Convert.ToDecimal(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
+                                detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
+                                
+                                _detalleventas.Add(detalle);
+                                totalVenta += Convert.ToDecimal(detalle.ValorTotal);
+                                totalPeso += detalle.PesoBruto;
+                            }
+                            _totalvalorventa = $"${totalVenta.ToString("N0")}";
+                            _totalpeso = totalPeso.ToString("N1");
+                            printPreviewDialog.ShowDialog();
+                            //printDocument.Print();
+                            //MessageBox.Show("Se Imprimió correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            //ImprimirDocumento();
+                            //
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error: {ex.Message}");
+                    }
+                }
+            }
+        }
+        private void ObtenerDetallesVenta(int ventaId)
+        {
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
+
+            string query = @"
+            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.Canastas, dv.PesoBruto, dv.Cantidad, dv.ValorTotal, cl.SaldoFavor, cl.SaldoDeuda
+            FROM ((DetalleVentas dv
+            INNER JOIN Productos p ON dv.ProductoId = p.Id)
+            INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
+            INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
+            WHERE dv.VentaId = ?";
+
+            using (OleDbConnection connection = new OleDbConnection(connectionString))
+            {
+                using (OleDbCommand command = new OleDbCommand(query, connection))
+                {
+                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
+
+                    try
+                    {
+                        connection.Open();
+                        using (OleDbDataReader reader = command.ExecuteReader())
+                        {
+                            DataTable dt = new DataTable();
+                            dt.Load(reader);
+
+                            MostrarDetalles(dt);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error: {ex.Message}");
+                    }
+                }
+            }
+        }
+        private void MostrarDetalles(DataTable dt)
+        {
+            if (dt.Rows.Count == 0)
+            {
+                MessageBox.Show("No se encontraron detalles para esta venta.", "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            DateTime selectedDate = datePickerStart.Value;
-            string cliente = txtCliente.Text;
+            string nombreComercializadora = "COMERCIALIZADORA VERDUM";
+            string mensaje = $"                       {nombreComercializadora}\n" +
+                             "-------------------------------------------------------------------------------\n";
 
-            string filterQuery = "1=1";
-            if (datePickerStart.Value != null)
+            var colombianCulture = new CultureInfo("es-CO");
+
+            var resumenProductos = new Dictionary<string, List<(decimal Precio, decimal Peso, decimal ValorTotal)>>();
+
+            foreach (DataRow row in dt.Rows)
             {
-                filterQuery += $" AND Fecha = #{selectedDate:MM-dd-yyyy}#";
-            }
-            if (!string.IsNullOrWhiteSpace(cliente))
-            {
-                filterQuery += $" AND NombreCliente = '{cliente}'";
+                string nombreProducto = row["Nombre"].ToString();
+                decimal precio = Convert.ToDecimal(row["Precio"]);
+                decimal peso = Convert.ToDecimal(row["PesoBruto"]);
+                decimal valorTotal = Convert.ToDecimal(row["ValorTotal"]);
+                decimal peso_neto = Convert.ToDecimal(row["Cantidad"]);
+                string precioFormateado = precio.ToString("N2", colombianCulture);
+                string pesoFormateado = peso.ToString("N1", colombianCulture);
+                string valorTotalFormateado = valorTotal.ToString("N2", colombianCulture);
+
+                mensaje += $"Nombre Producto: {nombreProducto}\n" +
+                           $"Precio: {precioFormateado}\n" +
+                           $"Total Canastas: {row["Canastas"]}\n" +
+                           $"Peso Bruto: {pesoFormateado}\n" +
+                           $"Cantidad: {row["Cantidad"]}\n" +
+                           $"Valor Total: {valorTotalFormateado}\n" +
+                           "-------------------------------------------------------------------------------\n";
+
+                if (!resumenProductos.ContainsKey(nombreProducto))
+                {
+                    resumenProductos[nombreProducto] = new List<(decimal Precio, decimal Peso, decimal ValorTotal)>();
+                }
+                resumenProductos[nombreProducto].Add((precio, peso_neto, valorTotal));
             }
 
-            LoadData(filterQuery);
+            mensaje += "\n";
+            mensaje += "                                      RESUMEN:\n";
+            mensaje += "-------------------------------------------------------------------------------\n";
+
+            foreach (var producto in resumenProductos)
+            {
+                string nombreProducto = producto.Key;
+                var detalles = producto.Value;
+
+                mensaje += $"Producto: {nombreProducto}\n";
+                foreach (var detalle in detalles)
+                {
+                    string precioFormateado = detalle.Precio.ToString("N2", colombianCulture);
+                    string pesoFormateado = detalle.Peso.ToString("N1", colombianCulture);
+                    string valorTotalFormateado = detalle.ValorTotal.ToString("N2", colombianCulture);
+
+                    mensaje += $"Precio: {precioFormateado}, Peso: {pesoFormateado}, Valor Total: {valorTotalFormateado}\n";
+                }
+                mensaje += "-------------------------------------------------------------------------------\n";
+            }
+
+            MessageBox.Show(mensaje, "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        private void SetButtonImageFromUrl()
+        {
+            try
+            {
+                string imageUrl = "https://img.icons8.com/material-two-tone/16/refresh.png";
+                string back = "https://img.icons8.com/material-two-tone/16/return.png";
+
+                using (WebClient webClient = new WebClient())
+                {
+                    byte[] imageBytes = webClient.DownloadData(imageUrl);
+                    byte[] imageBack = webClient.DownloadData(back);
+
+                    using (var ms = new System.IO.MemoryStream(imageBytes))
+                    {
+                        Image image = Image.FromStream(ms);
+                        btnRefrescar.Image = image;
+                        btnRefrescar.ImageAlign = ContentAlignment.MiddleLeft;
+                    }
+
+                    using (var rt = new System.IO.MemoryStream(imageBack))
+                    {
+                        Image imageback = Image.FromStream(rt);
+                        btnVolver.Image = imageback;
+                        btnVolver.ImageAlign = ContentAlignment.MiddleLeft;
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ocurrió un error al descargar la imagen: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void Historial_Load(object sender, EventArgs e)
+        {
+            this.Size = new Size(1096, 589);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
         }
         private void btnRefrescar_Click(object sender, EventArgs e)
         {
@@ -242,6 +563,16 @@ namespace ComercializadoraVerdum
         private void btnVolver_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+        private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                if (e.ColumnIndex <= 10)
+                {
+                    MessageBox.Show("Solo se permite Imprimir o ver el Detalle de una Venta.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
         }
         private void PrintDocument_BeginPrint(object sender, PrintEventArgs e)
         {
@@ -321,7 +652,7 @@ namespace ComercializadoraVerdum
                 g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 130, startY + offsetY);
                 g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 200, startY + offsetY);
                 offsetY += 15;
-
+                
             }
             offsetY += 10;
 
@@ -341,62 +672,6 @@ namespace ComercializadoraVerdum
             g.DrawString($"Fecha Generación Prefactura:", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 20, startY + offsetY);
             offsetY += 15;
             g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 15, startY + offsetY);
-        }
-        public void ImprimirFacturaCompra(int ventaId)
-        {
-            string connectionString = configuration.GetConnectionString("DefaultConnection");
-            decimal totalVenta = 0;
-            decimal totalPeso = 0;
-            string query = @"
-                    SELECT p.Nombre, dv.Precio, SUM(dv.PesoBruto) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal
-                    FROM ((DetalleVentas dv
-                    INNER JOIN Productos p ON dv.ProductoId = p.Id)
-                    INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
-                    INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
-                    WHERE dv.VentaId = ?
-                    GROUP BY p.Nombre, dv.Precio";
-
-            _detalleventas = new List<DetalleVenta>();
-
-            using (OleDbConnection connection = new OleDbConnection(connectionString))
-            {
-                using (OleDbCommand command = new OleDbCommand(query, connection))
-                {
-                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
-
-                    try
-                    {
-                        connection.Open();
-                        using (OleDbDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-
-                                var detalle = new DetalleVenta();
-                                detalle.Nombre = reader.GetString(0);
-                                detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
-                                detalle.PesoBruto = Convert.ToDecimal(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
-                                detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
-
-                                _detalleventas.Add(detalle);
-                                totalVenta += Convert.ToDecimal(detalle.ValorTotal);
-                                totalPeso += detalle.PesoBruto;
-                            }
-                            _totalvalorventa = $"${totalVenta.ToString("N0")}";
-                            _totalpeso = totalPeso.ToString("N1");
-                            printPreviewDialog.ShowDialog();
-                            //printDocument.Print();
-                            //MessageBox.Show("Se Imprimió correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            //ImprimirDocumento();
-                            //
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error: {ex.Message}");
-                    }
-                }
-            }
         }
         private void ImprimirDocumento()
         {
@@ -436,287 +711,13 @@ namespace ComercializadoraVerdum
                 }
             }
         }
-        private decimal ObtenerSaldoDeuda(string nombreCliente)
+        public class DetalleVenta
         {
-            decimal saldoDeuda = 0;
-            try
-            {
-                string connectionString = configuration.GetConnectionString("DefaultConnection");
-                using (var connection = new OleDbConnection(connectionString))
-                {
-                    connection.Open();
-                    string query = "SELECT SaldoDeuda FROM Clientes WHERE NombreCliente = ?";
-                    using (var command = new OleDbCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("?", nombreCliente);
-                        saldoDeuda = (decimal)command.ExecuteScalar();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al obtener saldoDeuda: {ex.Message}");
-            }
-            return saldoDeuda;
+            public int DetalleVentaId { get; set; }
+            public string Nombre { get; set; }
+            public decimal Precio { get; set; }
+            public decimal PesoBruto { get; set; }
+            public decimal ValorTotal { get; set; }
         }
-        private void ConsultarDatos(DateTime fecha, string cliente)
-        {
-            string connectionString = configuration.GetConnectionString("DefaultConnection");
-
-            using (OleDbConnection connection = new OleDbConnection(connectionString))
-            {
-                try
-                {
-                    connection.Open();
-
-                    string query = "SELECT * FROM Ventas " +
-                                   "WHERE Fecha = @Fecha AND NombreCliente LIKE @Cliente";
-
-                    using (OleDbCommand command = new OleDbCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@Fecha", fecha.Date);
-                        command.Parameters.AddWithValue("@Cliente", "%" + cliente + "%");
-
-                        OleDbDataAdapter adapter = new OleDbDataAdapter(command);
-                        DataTable dataTable = new DataTable();
-                        adapter.Fill(dataTable);
-
-                        dataGridView1.DataSource = dataTable;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Ocurrió un error al consultar la base de datos: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                finally
-                {
-                    connection.Close();
-                }
-            }
-        }
-        private void SaldarDeuda(string nombreCliente, int ventaId)
-        {
-            var colombianCulture = new CultureInfo("es-CO");
-
-            decimal saldoDeuda = ObtenerSaldoDeuda(nombreCliente);
-
-            if (saldoDeuda <= 0)
-            {
-                MessageBox.Show($"El cliente: {nombreCliente} se encuentra al día. No tiene deuda pendiente.", "Sin Pendientes", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            else
-            {
-                string saldoPendiente = saldoDeuda.ToString("N2", colombianCulture);
-                DialogResult result = MessageBox.Show(
-                    $"Valor de la deuda: ${saldoPendiente}. Nombre Cliente: {nombreCliente}. ¿Deseas saldar la deuda pendiente?",
-                    "Saldar Deuda",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
-
-                if (result == DialogResult.Yes)
-                {
-                    SaldarDeudaCliente(nombreCliente, saldoDeuda, ventaId);
-                }
-            }
-        }
-        private void SaldarDeudaCliente(string nombreCliente, decimal saldo, int ventaId)
-        {
-            try
-            {
-                string connectionString = configuration.GetConnectionString("DefaultConnection");
-                using (var connection = new OleDbConnection(connectionString))
-                {
-                    connection.Open();
-                    string query = "UPDATE Clientes SET SaldoDeuda = 0 WHERE NombreCliente = ?";
-                    using (var command = new OleDbCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("?", nombreCliente);
-                        int rowsAffected = command.ExecuteNonQuery();
-
-                        if (rowsAffected > 0)
-                        {
-                            //MessageBox.Show($"La deuda de {nombreCliente} ha sido saldada exitosamente.");
-                        }
-                        else
-                        {
-                            //MessageBox.Show("Error al saldar la deuda. Por favor, intenta nuevamente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
-                    }
-
-                    string query2 = "UPDATE Ventas SET TotalPagar = TotalCompra WHERE VentaId = ?";
-                    using (var command = new OleDbCommand(query2, connection))
-                    {
-                        command.Parameters.AddWithValue("?", ventaId);
-                        int rowsAffected = command.ExecuteNonQuery();
-
-                        if (rowsAffected > 0)
-                        {
-                            MessageBox.Show($"La deuda del Cliente: {nombreCliente} ha sido saldada exitosamente.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            LoadData();
-                        }
-                        else
-                        {
-                            MessageBox.Show("Error al saldar la deuda. Por favor, intenta nuevamente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
-                    }
-
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al saldar la deuda: {ex.Message}");
-            }
-        }      
-        private void ObtenerDetallesVenta(int ventaId)
-        {
-            string connectionString = configuration.GetConnectionString("DefaultConnection");
-
-            string query = @"
-            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.Canastas, dv.PesoBruto, dv.Cantidad, dv.ValorTotal, cl.SaldoFavor, cl.SaldoDeuda
-            FROM ((DetalleVentas dv
-            INNER JOIN Productos p ON dv.ProductoId = p.Id)
-            INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
-            INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
-            WHERE dv.VentaId = ?";
-
-            using (OleDbConnection connection = new OleDbConnection(connectionString))
-            {
-                using (OleDbCommand command = new OleDbCommand(query, connection))
-                {
-                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
-
-                    try
-                    {
-                        connection.Open();
-                        using (OleDbDataReader reader = command.ExecuteReader())
-                        {
-                            DataTable dt = new DataTable();
-                            dt.Load(reader);
-
-                            MostrarDetalles(dt);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error: {ex.Message}");
-                    }
-                }
-            }
-        }
-        private void MostrarDetalles(DataTable dt)
-        {
-            if (dt.Rows.Count == 0)
-            {
-                MessageBox.Show("No se encontraron detalles para esta venta.", "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            string nombreComercializadora = "COMERCIALIZADORA VERDUM";
-            string mensaje = $"                       {nombreComercializadora}\n" +
-                             "-------------------------------------------------------------------------------\n";
-
-            var colombianCulture = new CultureInfo("es-CO");
-
-            var resumenProductos = new Dictionary<string, List<(decimal Precio, decimal Peso, decimal ValorTotal)>>();
-
-            foreach (DataRow row in dt.Rows)
-            {
-                string nombreProducto = row["Nombre"].ToString();
-                decimal precio = Convert.ToDecimal(row["Precio"]);
-                decimal peso = Convert.ToDecimal(row["PesoBruto"]);
-                decimal valorTotal = Convert.ToDecimal(row["ValorTotal"]);
-
-                string precioFormateado = precio.ToString("N2", colombianCulture);
-                string pesoFormateado = peso.ToString("N2", colombianCulture);
-                string valorTotalFormateado = valorTotal.ToString("N2", colombianCulture);
-
-                mensaje += $"Nombre Producto: {nombreProducto}\n" +
-                           $"Precio: {precioFormateado}\n" +
-                           $"Total Canastas: {row["Canastas"]}\n" +
-                           $"Peso Bruto: {pesoFormateado}\n" +
-                           $"Cantidad: {row["Cantidad"]}\n" +
-                           $"Valor Total: {valorTotalFormateado}\n" +
-                           "-------------------------------------------------------------------------------\n";
-
-                if (!resumenProductos.ContainsKey(nombreProducto))
-                {
-                    resumenProductos[nombreProducto] = new List<(decimal Precio, decimal Peso, decimal ValorTotal)>();
-                }
-                resumenProductos[nombreProducto].Add((precio, peso, valorTotal));
-            }
-
-            mensaje += "\n";
-            mensaje += "                                      RESUMEN:\n";
-            mensaje += "-------------------------------------------------------------------------------\n";
-
-            foreach (var producto in resumenProductos)
-            {
-                string nombreProducto = producto.Key;
-                var detalles = producto.Value;
-
-                mensaje += $"Producto: {nombreProducto}\n";
-                foreach (var detalle in detalles)
-                {
-                    string precioFormateado = detalle.Precio.ToString("N2", colombianCulture);
-                    string pesoFormateado = detalle.Peso.ToString("N2", colombianCulture);
-                    string valorTotalFormateado = detalle.ValorTotal.ToString("N2", colombianCulture);
-
-                    mensaje += $"Precio: {precioFormateado}, Peso: {pesoFormateado}, Valor Total: {valorTotalFormateado}\n";
-                }
-                mensaje += "-------------------------------------------------------------------------------\n";
-            }
-
-            MessageBox.Show(mensaje, "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-        private void SetButtonImageFromUrl()
-        {
-            try
-            {
-                string imageUrl = "https://img.icons8.com/material-two-tone/16/refresh.png";
-                string back = "https://img.icons8.com/material-two-tone/16/return.png";
-
-                using (WebClient webClient = new WebClient())
-                {
-                    byte[] imageBytes = webClient.DownloadData(imageUrl);
-                    byte[] imageBack = webClient.DownloadData(back);
-
-                    using (var ms = new System.IO.MemoryStream(imageBytes))
-                    {
-                        Image image = Image.FromStream(ms);
-                        btnRefrescar.Image = image;
-                        btnRefrescar.ImageAlign = ContentAlignment.MiddleLeft;
-                    }
-
-                    using (var rt = new System.IO.MemoryStream(imageBack))
-                    {
-                        Image imageback = Image.FromStream(rt);
-                        btnVolver.Image = imageback;
-                        btnVolver.ImageAlign = ContentAlignment.MiddleLeft;
-                    };
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Ocurrió un error al descargar la imagen: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-       
-        //private void dataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
-        //{
-        //    if (dataGridView1.Columns[e.ColumnIndex].Name == "Saldar Deuda")
-        //    {
-        //        string nombreCliente = dataGridView1.Rows[e.RowIndex].Cells["nombreCliente"].Value.ToString();
-
-        //        if (!saldoDeudasCache.ContainsKey(nombreCliente))
-        //        {
-        //            decimal saldoDeuda = ObtenerSaldoDeuda(nombreCliente);
-        //            saldoDeudasCache[nombreCliente] = saldoDeuda;
-        //        }
-
-        //        decimal saldo = saldoDeudasCache[nombreCliente];
-
-        //        e.Value = saldo > 0 ? "Saldar Deuda" : "";  
-        //    }
-        //}
     }
 }
