@@ -307,11 +307,31 @@ namespace ComercializadoraVerdum
 
                 if (result == DialogResult.Yes)
                 {
-                    SaldarDeudaCliente(nombreCliente, saldoDeuda, ventaId);
+                    using (var form = new IngresoPagos())
+                    {
+                        if (form.ShowDialog() == DialogResult.OK)
+                        {
+                            decimal efectivo = form.ValorEfectivo;
+                            decimal transferencia = form.ValorTransferencia;
+
+                            if (efectivo + transferencia >= saldoDeuda)
+                            {
+                                SaldarDeudaCliente(nombreCliente, saldoDeuda, ventaId, efectivo, transferencia);
+                            }
+                            else
+                            {
+                                MessageBox.Show(
+                                    $"El monto ingresado no cubre la deuda pendiente. Deuda: ${saldoPendiente}, Monto ingresado: ${(efectivo + transferencia).ToString("N2", colombianCulture)}",
+                                    "Error",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error);
+                            }
+                        }
+                    }
                 }
             }
         }
-        private void SaldarDeudaCliente(string nombreCliente, decimal saldo, int ventaId)
+        private void SaldarDeudaCliente(string nombreCliente, decimal saldo, int ventaId, decimal valorEfectivo, decimal valorTransferencia)
         {
             try
             {
@@ -349,6 +369,63 @@ namespace ComercializadoraVerdum
                         else
                         {
                             MessageBox.Show("Error al saldar la deuda. Por favor, intenta nuevamente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+
+                    if (valorEfectivo > 0 && valorTransferencia <= 0)
+                    {
+                        string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                         "VALUES (?, ?, ?, ?)";
+                        using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                        {
+                            AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                            AbonoCommand.Parameters.AddWithValue("@TipoPago", "Efectivo");
+                            AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorEfectivo);
+                            AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                            AbonoCommand.ExecuteNonQuery();
+                        }
+                    }
+                    else if (valorTransferencia > 0 && valorEfectivo <= 0)
+                    {
+                        string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                            "VALUES (?, ?, ?, ?)";
+                        using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                        {
+                            AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                            AbonoCommand.Parameters.AddWithValue("@TipoPago", "Transferencia");
+                            AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorTransferencia);
+                            AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                            AbonoCommand.ExecuteNonQuery();
+                        }
+                    }
+                    else
+                    {
+                        string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                                             "VALUES (?, ?, ?, ?)";
+                        using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                        {
+                            AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                            AbonoCommand.Parameters.AddWithValue("@TipoPago", "Efectivo");
+                            AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorEfectivo);
+                            AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                            AbonoCommand.ExecuteNonQuery();
+                        }
+
+                        {
+                            string insertAbonoQuery2 = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                                             "VALUES (?, ?, ?, ?)";
+                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery2, connection))
+                            {
+                                AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                                AbonoCommand.Parameters.AddWithValue("@TipoPago", "Transferencia");
+                                AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorTransferencia);
+                                AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                                AbonoCommand.ExecuteNonQuery();
+                            }
                         }
                     }
 

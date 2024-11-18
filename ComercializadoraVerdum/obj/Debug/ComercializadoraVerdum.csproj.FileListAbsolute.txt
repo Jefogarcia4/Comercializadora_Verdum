@@ -106,3 +106,4 @@ E:\Git_Projects\Comercializadora_Verdum-code\ComercializadoraVerdum\obj\Debug\Co
 E:\Git_Projects\Comercializadora_Verdum-code\ComercializadoraVerdum\obj\Debug\Comercia.A8165204.Up2Date
 E:\Git_Projects\Comercializadora_Verdum-code\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.exe
 E:\Git_Projects\Comercializadora_Verdum-code\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.pdb
+C:\Users\ybedoya\Documents\Comercializadora_Verdum\ComercializadoraVerdum\obj\Debug\ComercializadoraVerdum.IngresoPagos.resources
