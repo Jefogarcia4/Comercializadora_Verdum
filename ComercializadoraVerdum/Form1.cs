@@ -1029,7 +1029,7 @@ namespace ComercializadoraVerdum
             dataGridView1.Rows.Clear();
             resumenProductos.Clear();
             lblResumenVenta.Text = "No se han agredado productos a la factura";
-            //lblDevuelta.Text = "0";
+            lblDevuelta.Text = "0";
             SiguienteConsecutivo();
         }
 
@@ -1047,15 +1047,30 @@ namespace ComercializadoraVerdum
             if (txtAbona.Text != string.Empty)
             {
               
-                decimal valorPagado = decimal.Parse(txtAbona.Text);
-                if (valorPagado < 0)
+                decimal valorEfectivo = decimal.TryParse(txtAbona.Text, out decimal resultefe) ? resultefe : 0;
+                decimal valorTransferencia = decimal.TryParse(txtAbonaTransferencia.Text, out decimal resulttrans) ? resulttrans : 0;
+
+                if (valorEfectivo > 0 && valorTransferencia <= 0)
                 {
-                    SaveButton.Enabled = false;
+                    string valor1Texto = label3.Text.Replace("Total:", "");
+                    decimal valorventa = Convert.ToDecimal(valor1Texto);
+                    decimal devuelta = valorEfectivo - valorventa;
+                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
+                    SaveButton.Enabled = true;
+                }
+                else if (valorEfectivo > 0 && valorTransferencia > 0)
+                {
+                    string valor1Texto = label3.Text.Replace("Total:", "");
+                    decimal valorventa = Convert.ToDecimal(valor1Texto);
+                    decimal devuelta = (valorEfectivo + valorTransferencia) - valorventa;
+                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
+                    SaveButton.Enabled = true;
                 }
                 else
                 {
-                    SaveButton.Enabled = true;
+                    SaveButton.Enabled = false;
                 }
+
 
             }
             else
@@ -1069,17 +1084,29 @@ namespace ComercializadoraVerdum
         {
             if (txtAbonaTransferencia.Text != string.Empty)
             {
+                decimal valorEfectivo = decimal.TryParse(txtAbona.Text, out decimal resultefe) ? resultefe : 0;
+                decimal valorTransferencia = decimal.TryParse(txtAbonaTransferencia.Text, out decimal resulttrans) ? resulttrans : 0;
 
-                decimal valorPagado = decimal.Parse(txtAbonaTransferencia.Text);
-                if (valorPagado < 0)
+                if (valorTransferencia > 0 && valorEfectivo <= 0)
                 {
-                    SaveButton.Enabled = false;
+                    string valor1Texto = label3.Text.Replace("Total:", "");
+                    decimal valorventa = Convert.ToDecimal(valor1Texto);
+                    decimal devuelta = valorTransferencia - valorventa;
+                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
+                    SaveButton.Enabled = true;
+                }
+                else if (valorTransferencia > 0 && valorEfectivo > 0)
+                {
+                    string valor1Texto = label3.Text.Replace("Total:", "");
+                    decimal valorventa = Convert.ToDecimal(valor1Texto);
+                    decimal devuelta = (valorTransferencia + valorEfectivo) - valorventa;
+                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
+                    SaveButton.Enabled = true;
                 }
                 else
                 {
-                    SaveButton.Enabled = true;
+                    SaveButton.Enabled = false;
                 }
-
             }
             else
             {
