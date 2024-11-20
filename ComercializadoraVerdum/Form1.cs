@@ -43,6 +43,7 @@ namespace ComercializadoraVerdum
             this.Icon = new Icon("Images/verdum-logo-icono.ico");
             this.Shown += new EventHandler(FrmHome_Shown);
             dataGridView1.CellEndEdit += dataGridView1_CellEndEdit;
+            dataGridView1.AllowUserToDeleteRows = true;
             _historial = historial;
 
         }
@@ -60,41 +61,54 @@ namespace ComercializadoraVerdum
         private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
             var row = dataGridView1.Rows[e.RowIndex];
-
             string producto = row.Cells["Producto"].FormattedValue?.ToString();
             string precio = row.Cells["Precio"].Value?.ToString();
-            string canastas = row.Cells["Canastas"].Value?.ToString();
-            string pesoBruto = row.Cells["Pesobruto"].Value?.ToString();
-            string cantidad = row.Cells["Cantidad"].Value?.ToString();
+            string canastasStr = row.Cells["Canastas"].Value?.ToString();
+            string pesoBrutoStr = row.Cells["Pesobruto"].Value?.ToString();
+            string cantidadStr = row.Cells["Cantidad"].Value?.ToString();
             string total = row.Cells["Total"].Value?.ToString();
 
             if (!string.IsNullOrEmpty(producto) &&
                 !string.IsNullOrEmpty(precio) &&
-                !string.IsNullOrEmpty(canastas) &&
-                !string.IsNullOrEmpty(pesoBruto) &&
-                !string.IsNullOrEmpty(cantidad) &&
-                !string.IsNullOrEmpty(total))
+                decimal.TryParse(canastasStr, out decimal canastas) &&
+                decimal.TryParse(pesoBrutoStr, out decimal pesoBruto) &&
+                decimal.TryParse(cantidadStr, out decimal cantidad))
             {
-                var detalle = new ProductoDetalle
-                {
-                    Precio = precio,
-                    Canastas = canastas,
-                    PesoBruto = pesoBruto,
-                    Cantidad = cantidad,
-                    Total = total
-                };
-
                 var clave = (producto, precio);
 
-                if (!resumenProductos.ContainsKey(clave))
+                if (resumenProductos.ContainsKey(clave))
                 {
-                    resumenProductos[clave] = new List<ProductoDetalle>();
+                    // Actualizar los valores acumulativos
+                    var existente = resumenProductos[clave].FirstOrDefault();
+                    if (existente != null)
+                    {
+                        existente.Canastas = (decimal.Parse(existente.Canastas) + canastas).ToString();
+                        existente.PesoBruto = (decimal.Parse(existente.PesoBruto) + pesoBruto).ToString();
+                        existente.Cantidad = (decimal.Parse(existente.Cantidad) + cantidad).ToString();
+                        existente.Total = (decimal.Parse(existente.Total.Replace("$", "")) +  (decimal.Parse(total.Replace("$","")))).ToString();
+                    }
                 }
-                resumenProductos[clave].Add(detalle);
+                else
+                {
+                    // Agregar un nuevo detalle si no existe
+                    var detalle = new ProductoDetalle
+                    {
+                        Precio = precio,
+                        Canastas = canastas.ToString(),
+                        PesoBruto = pesoBruto.ToString(),
+                        Cantidad = cantidad.ToString(),
+                        Total = total
+                    };
+                    resumenProductos[clave] = new List<ProductoDetalle> { detalle };
+                }
 
                 ActualizarResumenVentaLabel();
             }
         }
+
+
+
+
 
         private void ActualizarResumenVentaLabel()
         {
@@ -332,9 +346,9 @@ namespace ComercializadoraVerdum
 
             dataGridView1.Columns["Canasta P. KG"].Width = 80;
             dataGridView1.Columns["Producto"].Width = 80;
-            dataGridView1.Columns["Canastas"].Width = 80; 
-            dataGridView1.Columns["PesoBruto"].Width = 80; 
-            dataGridView1.Columns["Cantidad"].Width = 80;  
+            dataGridView1.Columns["Canastas"].Width = 80;
+            dataGridView1.Columns["PesoBruto"].Width = 80;
+            dataGridView1.Columns["Cantidad"].Width = 80;
             dataGridView1.Columns["Total"].Width = 80;
 
             DataGridViewTextBoxColumn isSavedColumn = new DataGridViewTextBoxColumn
@@ -424,151 +438,178 @@ namespace ComercializadoraVerdum
                 {
                     connection.Open();
                 }
-                
+
                 try
+                {
+                    decimal totalCompra = 0;
+                    int totalCanastas = 0;
+                    double totalPesoBruto = 0;
+                    decimal total = 0;
+                    decimal abono = 0;
+                    // Conversión de texto a número
+                    string valor1Texto = label3.Text.Replace("Total:$", "");
+                    string reemplazovalor1Texto = valor1Texto.Replace("Total: ", "").Replace(".", "").Replace(",", "");
+
+                    if (int.TryParse(reemplazovalor1Texto, out int numero))
                     {
-                        decimal totalCompra = 0;
-                        int totalCanastas = 0;
-                        double totalPesoBruto = 0;
-                        decimal total = 0;
-                        decimal abono = 0;
-                        // Conversión de texto a número
-                        string valor1Texto = label3.Text.Replace("Total:$", "");
-                        string reemplazovalor1Texto = valor1Texto.Replace("Total: ", "").Replace(".", "").Replace(",", "");
-
-                        if (int.TryParse(reemplazovalor1Texto, out int numero))
+                        if (numero % 100 == 0)
                         {
-                            if (numero % 100 == 0)
+                            int ultimosDosDigitos = numero % 100;
+
+                            if (ultimosDosDigitos >= 50)
                             {
-                                int ultimosDosDigitos = numero % 100;
 
-                                if (ultimosDosDigitos >= 50)
-                                {
-
-                                    numero = (numero / 100) * 100 + 100;
-                                }
-                                else
-                                {
-
-                                    numero = numero / 100;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("El valor no es un número válido.");
-                        }
-
-
-                        string abonoEfectivo = txtAbona.Text == "" ? "0" : txtAbona.Text;
-                        string abonaTransaferencia = txtAbonaTransferencia.Text == "" ? "0" : txtAbonaTransferencia.Text;
-
-                        decimal reemplazoAbono = decimal.Parse(abonoEfectivo, cultureColombia);
-                        decimal reemplazoEfectivo = decimal.Parse(abonaTransaferencia, cultureColombia);
-
-                        // Suma los valores como decimales
-                        decimal sumaPagos = reemplazoAbono + reemplazoEfectivo;
-
-                        // Si necesitas el resultado como texto (con formato colombiano)
-                        string sumaPagosTexto = sumaPagos.ToString("N0", cultureColombia);
-
-
-                        decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
-                        decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
-
-                        if (decimal.TryParse(numero.ToString(), NumberStyles.Any, cultureColombia, out decimal totalValorCompra) &&
-                            decimal.TryParse(sumaPagosTexto, NumberStyles.Any, cultureColombia, out abono))
-                        {
-                            if (abono > totalValorCompra)
-                            {
-                                decimal cambio = abono - totalValorCompra;
-                            }
-                            else if (abono == totalValorCompra)
-                            {
-                                //MessageBox.Show("El pago fue completado.", "Venta Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                numero = (numero / 100) * 100 + 100;
                             }
                             else
                             {
-                                decimal deuda = totalValorCompra - abono;
-                                MessageBox.Show($"El cliente queda debiendo: {deuda.ToString("C", cultureColombia)}", "Pendiente por Pagar", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                ActualizarSaldoClienteEnContra(txtCliente.Text, totalValorCompra, deuda, abono);
+
+                                numero = numero / 100;
                             }
                         }
+                    }
+                    else
+                    {
+                        Console.WriteLine("El valor no es un número válido.");
+                    }
 
 
+                    string abonoEfectivo = txtAbona.Text == "" ? "0" : txtAbona.Text;
+                    string abonaTransaferencia = txtAbonaTransferencia.Text == "" ? "0" : txtAbonaTransferencia.Text;
+
+                    decimal reemplazoAbono = decimal.Parse(abonoEfectivo, cultureColombia);
+                    decimal reemplazoEfectivo = decimal.Parse(abonaTransaferencia, cultureColombia);
+
+                    // Suma los valores como decimales
+                    decimal sumaPagos = reemplazoAbono + reemplazoEfectivo;
+
+                    // Si necesitas el resultado como texto (con formato colombiano)
+                    string sumaPagosTexto = sumaPagos.ToString("N0", cultureColombia);
 
 
-                        string fechaActual = DateTime.Now.ToString("yyyyMMdd");
-                        string nuevoConsecutivo = "";
-                        int nuevoNumero = 1;
+                    decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
+                    decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
 
-                        string lastConsecutivoQuery = "SELECT TOP 1 consecutivo FROM Ventas WHERE consecutivo LIKE ? ORDER BY consecutivo DESC";
-                        using (var command = new OleDbCommand(lastConsecutivoQuery, connection))
+                    if (decimal.TryParse(numero.ToString(), NumberStyles.Any, cultureColombia, out decimal totalValorCompra) &&
+                        decimal.TryParse(sumaPagosTexto, NumberStyles.Any, cultureColombia, out abono))
+                    {
+                        if (abono > totalValorCompra)
                         {
-                            command.Parameters.AddWithValue("?", fechaActual + "%");
-                            object result = command.ExecuteScalar();
+                            decimal cambio = abono - totalValorCompra;
+                        }
+                        else if (abono == totalValorCompra)
+                        {
+                            //MessageBox.Show("El pago fue completado.", "Venta Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        else
+                        {
+                            decimal deuda = totalValorCompra - abono;
+                            MessageBox.Show($"El cliente queda debiendo: {deuda.ToString("C", cultureColombia)}", "Pendiente por Pagar", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            ActualizarSaldoClienteEnContra(txtCliente.Text, totalValorCompra, deuda, abono);
+                        }
+                    }
 
-                            if (result != null)
+
+
+
+                    string fechaActual = DateTime.Now.ToString("yyyyMMdd");
+                    string nuevoConsecutivo = "";
+                    int nuevoNumero = 1;
+
+                    string lastConsecutivoQuery = "SELECT TOP 1 consecutivo FROM Ventas WHERE consecutivo LIKE ? ORDER BY consecutivo DESC";
+                    using (var command = new OleDbCommand(lastConsecutivoQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("?", fechaActual + "%");
+                        object result = command.ExecuteScalar();
+
+                        if (result != null)
+                        {
+                            string lastConsecutivo = result.ToString();
+                            if (lastConsecutivo.Length > 8)
                             {
-                                string lastConsecutivo = result.ToString();
-                                if (lastConsecutivo.Length > 8)
+                                string lastNumberStr = lastConsecutivo.Substring(8);
+                                if (int.TryParse(lastNumberStr, out int lastNumber))
                                 {
-                                    string lastNumberStr = lastConsecutivo.Substring(8);
-                                    if (int.TryParse(lastNumberStr, out int lastNumber))
-                                    {
-                                        nuevoNumero = lastNumber + 1;
-                                    }
+                                    nuevoNumero = lastNumber + 1;
                                 }
                             }
-
-                            nuevoConsecutivo = fechaActual + nuevoNumero.ToString("D5");
                         }
 
+                        nuevoConsecutivo = fechaActual + nuevoNumero.ToString("D5");
+                    }
 
-                        int ventaId;
-                        string insertVentaQuery = "INSERT INTO Ventas (consecutivo, nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalabona, totalpagar, fecha) " +
-                                                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
-                        using (OleDbCommand ventaCommand = new OleDbCommand(insertVentaQuery, connection))
+
+                    int ventaId;
+                    string insertVentaQuery = "INSERT INTO Ventas (consecutivo, nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalabona, totalpagar, fecha) " +
+                                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
+                    using (OleDbCommand ventaCommand = new OleDbCommand(insertVentaQuery, connection))
+                    {
+                        ventaCommand.Parameters.AddWithValue("consecutivo", nuevoConsecutivo);
+                        ventaCommand.Parameters.AddWithValue("@nombreCliente", txtCliente.Text);
+                        ventaCommand.Parameters.AddWithValue("@totalproductos", 0);
+                        ventaCommand.Parameters.AddWithValue("@totalcanastas", 0);
+                        ventaCommand.Parameters.AddWithValue("@totalpesobruto", 0);
+                        ventaCommand.Parameters.AddWithValue("@totalcompra", totalValorCompra);
+                        ventaCommand.Parameters.AddWithValue("@descuento", 0);
+                        ventaCommand.Parameters.AddWithValue("@totalabona", 0);
+                        ventaCommand.Parameters.AddWithValue("@totalpagar", abono);
+                        ventaCommand.Parameters.AddWithValue("@fecha", DateTime.Now.Date);
+
+                        ventaCommand.ExecuteNonQuery();
+
+                        ventaCommand.CommandText = "SELECT @@IDENTITY";
+                        ventaId = Convert.ToInt32(ventaCommand.ExecuteScalar());
+                    }
+
+
+                    decimal valorEfectivo = string.IsNullOrWhiteSpace(txtAbona.Text) ? 0 : decimal.Parse(txtAbona.Text, cultureColombia);
+                    decimal valorTransferencia = string.IsNullOrWhiteSpace(txtAbonaTransferencia.Text) ? 0 : decimal.Parse(txtAbonaTransferencia.Text, cultureColombia);
+                    if (valorEfectivo > 0 && valorTransferencia <= 0)
+                    {
+                        string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                         "VALUES (?, ?, ?, ?)";
+                        using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
                         {
-                            ventaCommand.Parameters.AddWithValue("consecutivo", nuevoConsecutivo);
-                            ventaCommand.Parameters.AddWithValue("@nombreCliente", txtCliente.Text);
-                            ventaCommand.Parameters.AddWithValue("@totalproductos", 0);
-                            ventaCommand.Parameters.AddWithValue("@totalcanastas", 0);
-                            ventaCommand.Parameters.AddWithValue("@totalpesobruto", 0);
-                            ventaCommand.Parameters.AddWithValue("@totalcompra", totalValorCompra);
-                            ventaCommand.Parameters.AddWithValue("@descuento", 0);
-                            ventaCommand.Parameters.AddWithValue("@totalabona", 0);
-                            ventaCommand.Parameters.AddWithValue("@totalpagar", abono);
-                            ventaCommand.Parameters.AddWithValue("@fecha", DateTime.Now.Date);
+                            AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                            AbonoCommand.Parameters.AddWithValue("@TipoPago", "Efectivo");
+                            AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorEfectivo);
+                            AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
 
-                            ventaCommand.ExecuteNonQuery();
+                            AbonoCommand.ExecuteNonQuery();
+                        }
+                    }
+                    else if (valorTransferencia > 0 && valorEfectivo <= 0)
+                    {
+                        string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                            "VALUES (?, ?, ?, ?)";
+                        using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                        {
+                            AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                            AbonoCommand.Parameters.AddWithValue("@TipoPago", "Transferencia");
+                            AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorTransferencia);
+                            AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
 
-                            ventaCommand.CommandText = "SELECT @@IDENTITY";
-                            ventaId = Convert.ToInt32(ventaCommand.ExecuteScalar());
+                            AbonoCommand.ExecuteNonQuery();
+                        }
+                    }
+                    else
+                    {
+                        string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                                             "VALUES (?, ?, ?, ?)";
+                        using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                        {
+                            AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
+                            AbonoCommand.Parameters.AddWithValue("@TipoPago", "Efectivo");
+                            AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorEfectivo);
+                            AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+                            AbonoCommand.ExecuteNonQuery();
                         }
 
-
-                        decimal valorEfectivo = string.IsNullOrWhiteSpace(txtAbona.Text) ? 0 : decimal.Parse(txtAbona.Text, CultureInfo.InvariantCulture);
-                        decimal valorTransferencia = string.IsNullOrWhiteSpace(txtAbonaTransferencia.Text) ? 0 : decimal.Parse(txtAbonaTransferencia.Text, CultureInfo.InvariantCulture);
-                        if (valorEfectivo > 0 && valorTransferencia <= 0)
                         {
-                            string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
-                             "VALUES (?, ?, ?, ?)";
-                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
-                            {
-                                AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
-                                AbonoCommand.Parameters.AddWithValue("@TipoPago", "Efectivo");
-                                AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorEfectivo);
-                                AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
-
-                                AbonoCommand.ExecuteNonQuery();
-                            }
-                        }
-                        else if (valorTransferencia > 0 && valorEfectivo <= 0)
-                        {
-                            string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
-                                "VALUES (?, ?, ?, ?)";
-                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
+                            string insertAbonoQuery2 = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+                                             "VALUES (?, ?, ?, ?)";
+                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery2, connection))
                             {
                                 AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
                                 AbonoCommand.Parameters.AddWithValue("@TipoPago", "Transferencia");
@@ -578,132 +619,106 @@ namespace ComercializadoraVerdum
                                 AbonoCommand.ExecuteNonQuery();
                             }
                         }
-                        else
-                        {
-                            string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
-                                                 "VALUES (?, ?, ?, ?)";
-                            using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery, connection))
-                            {
-                                AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
-                                AbonoCommand.Parameters.AddWithValue("@TipoPago", "Efectivo");
-                                AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorEfectivo);
-                                AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
-
-                                AbonoCommand.ExecuteNonQuery();
-                            }
-
-                            {
-                                string insertAbonoQuery2 = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
-                                                 "VALUES (?, ?, ?, ?)";
-                                using (OleDbCommand AbonoCommand = new OleDbCommand(insertAbonoQuery2, connection))
-                                {
-                                    AbonoCommand.Parameters.AddWithValue("@VentaId", ventaId);
-                                    AbonoCommand.Parameters.AddWithValue("@TipoPago", "Transferencia");
-                                    AbonoCommand.Parameters.AddWithValue("@ValorAbono", valorTransferencia);
-                                    AbonoCommand.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
-
-                                    AbonoCommand.ExecuteNonQuery();
-                                }
-                            }
-                        }
-                        //Cierre Movimientos
-
-                        foreach (DataGridViewRow row in dataGridView1.Rows)
-                        {
-                            if (row.IsNewRow) continue;
-
-                            bool isSaved = row.Cells["IsSaved"].Value != null && Convert.ToBoolean(row.Cells["IsSaved"].Value);
-                            if (!isSaved)
-                            {
-                                decimal pesocanastaKG = Convert.ToDecimal(row.Cells["Canasta P. KG"].Value);
-                                int idProducto = Convert.ToInt32(row.Cells["Producto"].Value);
-
-                                decimal precio;
-                                if (row.Cells["Precio"].Value is string precioString)
-                                {
-                                    string valorNumerico = precioString.Replace("$", "").Trim();
-                                    if (!decimal.TryParse(valorNumerico, out precio))
-                                    {
-                                        MessageBox.Show($"Error al convertir el precio en la fila {row.Index + 1}.");
-                                        continue;
-                                    }
-                                }
-                                else
-                                {
-                                    precio = Convert.ToDecimal(row.Cells["Precio"].Value);
-                                }
-
-                                int canastas = Convert.ToInt32(row.Cells["Canastas"].Value);
-                                double pesoBruto = Convert.ToDouble(row.Cells["PesoBruto"].Value);
-                                double cantidad = Convert.ToDouble(row.Cells["Cantidad"].Value);
-
-                                decimal valortotal;
-                                if (row.Cells["Total"].Value is string totalString)
-                                {
-                                    string valorNumericoTotal = totalString.Replace("$", "").Trim();
-                                    if (!decimal.TryParse(valorNumericoTotal, out valortotal))
-                                    {
-                                        MessageBox.Show($"Error al convertir el total en la fila {row.Index + 1}.");
-                                        continue;
-                                    }
-                                }
-                                else
-                                {
-                                    valortotal = Convert.ToDecimal(row.Cells["Total"].Value);
-                                }
-
-                                totalCompra += valortotal;
-                                totalCanastas += canastas;
-                                totalPesoBruto += pesoBruto;
-
-                                string query = "INSERT INTO DetalleVentas (ventaId, productoid, precio, canastas, pesobruto, cantidad, valortotal) " +
-                                               "VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-                                using (OleDbCommand command = new OleDbCommand(query, connection))
-                                {
-                                    command.Parameters.AddWithValue("@ventaId", ventaId);
-                                    command.Parameters.AddWithValue("@productoid", idProducto);
-                                    command.Parameters.AddWithValue("@precio", precio);
-                                    command.Parameters.AddWithValue("@canastas", canastas);
-                                    command.Parameters.AddWithValue("@pesobruto", pesoBruto);
-                                    command.Parameters.AddWithValue("@cantidad", cantidad);
-                                    command.Parameters.AddWithValue("@valortotal", valortotal);
-
-                                    command.ExecuteNonQuery();
-                                }
-
-                                row.Cells["IsSaved"].Value = true;
-                            }
-                        }
-
-
-
-                        string updateVentaQuery = "UPDATE Ventas SET totalproductos = ?, totalcanastas = ?, totalpesobruto = ?, totalcompra = ? WHERE VentaId = ?";
-                        using (OleDbCommand updateCommand = new OleDbCommand(updateVentaQuery, connection))
-                        {
-                            updateCommand.Parameters.AddWithValue("@totalproductos", dataGridView1.Rows.Count - 1);
-                            updateCommand.Parameters.AddWithValue("@totalcanastas", totalCanastas);
-                            updateCommand.Parameters.AddWithValue("@totalpesobruto", totalPesoBruto);
-                            updateCommand.Parameters.AddWithValue("@totalcompra", totalCompra);
-                            updateCommand.Parameters.AddWithValue("@VentaId", ventaId);
-
-                            updateCommand.ExecuteNonQuery();
-                        }
-
-                        GenerarNuevaFactura();
-                        _historial.ImprimirFacturaCompra(ventaId);
-                        MessageBox.Show("Venta registrada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
-                    catch (Exception ex)
+                    //Cierre Movimientos
+
+                    foreach (DataGridViewRow row in dataGridView1.Rows)
                     {
-                        MessageBox.Show("Error guardando la venta: " + ex.Message);
+                        if (row.IsNewRow) continue;
+
+                        bool isSaved = row.Cells["IsSaved"].Value != null && Convert.ToBoolean(row.Cells["IsSaved"].Value);
+                        if (!isSaved)
+                        {
+                            decimal pesocanastaKG = Convert.ToDecimal(row.Cells["Canasta P. KG"].Value);
+                            int idProducto = Convert.ToInt32(row.Cells["Producto"].Value);
+
+                            decimal precio;
+                            if (row.Cells["Precio"].Value is string precioString)
+                            {
+                                string valorNumerico = precioString.Replace("$", "").Trim();
+                                if (!decimal.TryParse(valorNumerico, out precio))
+                                {
+                                    MessageBox.Show($"Error al convertir el precio en la fila {row.Index + 1}.");
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                precio = Convert.ToDecimal(row.Cells["Precio"].Value);
+                            }
+
+                            int canastas = Convert.ToInt32(row.Cells["Canastas"].Value);
+                            double pesoBruto = Convert.ToDouble(row.Cells["PesoBruto"].Value);
+                            double cantidad = Convert.ToDouble(row.Cells["Cantidad"].Value);
+
+                            decimal valortotal;
+                            if (row.Cells["Total"].Value is string totalString)
+                            {
+                                string valorNumericoTotal = totalString.Replace("$", "").Trim();
+                                if (!decimal.TryParse(valorNumericoTotal, out valortotal))
+                                {
+                                    MessageBox.Show($"Error al convertir el total en la fila {row.Index + 1}.");
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                valortotal = Convert.ToDecimal(row.Cells["Total"].Value);
+                            }
+
+                            totalCompra += valortotal;
+                            totalCanastas += canastas;
+                            totalPesoBruto += pesoBruto;
+
+                            string query = "INSERT INTO DetalleVentas (ventaId, productoid, precio, canastas, pesobruto, cantidad, valortotal) " +
+                                           "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+                            using (OleDbCommand command = new OleDbCommand(query, connection))
+                            {
+                                command.Parameters.AddWithValue("@ventaId", ventaId);
+                                command.Parameters.AddWithValue("@productoid", idProducto);
+                                command.Parameters.AddWithValue("@precio", precio);
+                                command.Parameters.AddWithValue("@canastas", canastas);
+                                command.Parameters.AddWithValue("@pesobruto", pesoBruto);
+                                command.Parameters.AddWithValue("@cantidad", cantidad);
+                                command.Parameters.AddWithValue("@valortotal", valortotal);
+
+                                command.ExecuteNonQuery();
+                            }
+
+                            row.Cells["IsSaved"].Value = true;
+                        }
                     }
-                    finally
+
+
+
+                    string updateVentaQuery = "UPDATE Ventas SET totalproductos = ?, totalcanastas = ?, totalpesobruto = ?, totalcompra = ? WHERE VentaId = ?";
+                    using (OleDbCommand updateCommand = new OleDbCommand(updateVentaQuery, connection))
                     {
-                        connection.Close();
-                        LimpiarCampos();
+                        updateCommand.Parameters.AddWithValue("@totalproductos", dataGridView1.Rows.Count - 1);
+                        updateCommand.Parameters.AddWithValue("@totalcanastas", totalCanastas);
+                        updateCommand.Parameters.AddWithValue("@totalpesobruto", totalPesoBruto);
+                        updateCommand.Parameters.AddWithValue("@totalcompra", totalCompra);
+                        updateCommand.Parameters.AddWithValue("@VentaId", ventaId);
+
+                        updateCommand.ExecuteNonQuery();
                     }
-                
+
+                    GenerarNuevaFactura();
+                    _historial.ImprimirFacturaCompra(ventaId);
+                    MessageBox.Show("Venta registrada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error guardando la venta: " + ex.Message);
+                }
+                finally
+                {
+                    connection.Close();
+                    LimpiarCampos();
+                }
+
             }
             catch (Exception ex)
             {
@@ -1044,83 +1059,113 @@ namespace ComercializadoraVerdum
 
         private void txtAbona_TextChanged(object sender, EventArgs e)
         {
-            if (txtAbona.Text != string.Empty)
+            // Verifica si el campo está vacío
+            if (string.IsNullOrWhiteSpace(txtAbona.Text))
             {
-              
-                decimal valorEfectivo = decimal.TryParse(txtAbona.Text, out decimal resultefe) ? resultefe : 0;
-                decimal valorTransferencia = decimal.TryParse(txtAbonaTransferencia.Text, out decimal resulttrans) ? resulttrans : 0;
+                SaveButton.Enabled = false;
+                lblDevuelta.Text = "0";
+                return;
+            }
 
-                if (valorEfectivo > 0 && valorTransferencia <= 0)
-                {
-                    string valor1Texto = label3.Text.Replace("Total:", "");
-                    decimal valorventa = Convert.ToDecimal(valor1Texto);
-                    decimal devuelta = valorEfectivo - valorventa;
-                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
-                    SaveButton.Enabled = true;
-                }
-                else if (valorEfectivo > 0 && valorTransferencia > 0)
-                {
-                    string valor1Texto = label3.Text.Replace("Total:", "");
-                    decimal valorventa = Convert.ToDecimal(valor1Texto);
-                    decimal devuelta = (valorEfectivo + valorTransferencia) - valorventa;
-                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
-                    SaveButton.Enabled = true;
-                }
-                else
-                {
-                    SaveButton.Enabled = false;
-                }
+            // Guarda la posición actual del cursor
+            int cursorPosition = txtAbona.SelectionStart;
 
+            // Elimina caracteres no numéricos temporalmente
+            string rawText = new string(txtAbona.Text.Where(c => char.IsDigit(c)).ToArray());
 
+            if (decimal.TryParse(rawText, out decimal valorPagado))
+            {
+                // Verifica si el valor es válido
+                SaveButton.Enabled = valorPagado >= 0;
+
+                // Aplica el formato con separadores de miles
+                txtAbona.Text = valorPagado.ToString("N0");
+
+                // Restaura la posición del cursor ajustado según los separadores de miles
+                int delta = txtAbona.Text.Length - rawText.Length;
+                txtAbona.SelectionStart = cursorPosition + delta;
+
+                // Cálculo del cambio (devuelta)
+                string valor1Texto = label3.Text.Replace("Total:", "").Trim();
+                if (decimal.TryParse(valor1Texto, out decimal valorVenta))
+                {
+                    if (decimal.TryParse(txtAbonaTransferencia.Text, out decimal valorTransferencia))
+                    {
+                        valorPagado += valorTransferencia;
+                    }
+
+                    decimal devuelta = valorPagado - valorVenta;
+                    lblDevuelta.Text = devuelta.ToString("C0");
+                }
             }
             else
             {
+                // Si el texto no es válido, limpia el campo
+                txtAbona.Text = string.Empty;
                 SaveButton.Enabled = false;
+                lblDevuelta.Text = "0";
             }
-
         }
+
+
 
         private void txtAbonaTransferencia_TextChanged(object sender, EventArgs e)
         {
-            if (txtAbonaTransferencia.Text != string.Empty)
+            if (string.IsNullOrWhiteSpace(txtAbonaTransferencia.Text))
             {
-                decimal valorEfectivo = decimal.TryParse(txtAbona.Text, out decimal resultefe) ? resultefe : 0;
-                decimal valorTransferencia = decimal.TryParse(txtAbonaTransferencia.Text, out decimal resulttrans) ? resulttrans : 0;
+                SaveButton.Enabled = false;
+                lblDevuelta.Text = "0";
+                return;
+            }
 
-                if (valorTransferencia > 0 && valorEfectivo <= 0)
+            // Guarda la posición actual del cursor
+            int cursorPosition = txtAbonaTransferencia.SelectionStart;
+
+            // Elimina caracteres no numéricos temporalmente
+            string rawText = new string(txtAbonaTransferencia.Text.Where(c => char.IsDigit(c)).ToArray());
+
+            if (decimal.TryParse(rawText, out decimal valorPagado))
+            {
+                // Verifica si el valor es válido
+                SaveButton.Enabled = valorPagado >= 0;
+
+                // Aplica el formato con separadores de miles
+                txtAbonaTransferencia.Text = valorPagado.ToString("N0");
+
+                // Restaura la posición del cursor ajustado según los separadores de miles
+                int delta = txtAbonaTransferencia.Text.Length - rawText.Length;
+                txtAbonaTransferencia.SelectionStart = cursorPosition + delta;
+
+                // Cálculo del cambio (devuelta)
+                string valor1Texto = label3.Text.Replace("Total:", "").Trim();
+                if (decimal.TryParse(valor1Texto, out decimal valorVenta))
                 {
-                    string valor1Texto = label3.Text.Replace("Total:", "");
-                    decimal valorventa = Convert.ToDecimal(valor1Texto);
-                    decimal devuelta = valorTransferencia - valorventa;
-                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
-                    SaveButton.Enabled = true;
-                }
-                else if (valorTransferencia > 0 && valorEfectivo > 0)
-                {
-                    string valor1Texto = label3.Text.Replace("Total:", "");
-                    decimal valorventa = Convert.ToDecimal(valor1Texto);
-                    decimal devuelta = (valorTransferencia + valorEfectivo) - valorventa;
-                    lblDevuelta.Text = Convert.ToDecimal(devuelta).ToString("C0");
-                    SaveButton.Enabled = true;
-                }
-                else
-                {
-                    SaveButton.Enabled = false;
+                    if (decimal.TryParse(txtAbona.Text, out decimal valorEfectivo))
+                    {
+                        valorPagado += valorEfectivo;
+                    }
+
+                    decimal devuelta = valorPagado - valorVenta;
+                    lblDevuelta.Text = devuelta.ToString("C0");
                 }
             }
             else
             {
+                // Si el texto no es válido, limpia el campo
+                txtAbonaTransferencia.Text = string.Empty;
                 SaveButton.Enabled = false;
+                lblDevuelta.Text = "0";
             }
-
         }
 
-        private void TextBox_KeyPress(object sender, KeyPressEventArgs e) 
+
+        private void TextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            // Si el usuario presiona el punto
+            if (e.KeyChar == '.')
             {
-                e.Handled = true;
-                SaveButton.Enabled = true;
+                // Reemplaza el punto por una coma
+                e.KeyChar = ',';
             }
         }
 
@@ -1131,8 +1176,6 @@ namespace ComercializadoraVerdum
             {
                 e.Handled = true;
             }
-
-           
         }
 
         private void txtAbonaTransferencia_KeyPress(object sender, KeyPressEventArgs e)
@@ -1161,13 +1204,6 @@ namespace ComercializadoraVerdum
                     // Agrega el evento KeyPress para manejar el reemplazo
                     textBox.KeyPress += TextBox_KeyPress;
                 }
-                if (e.Control is TextBox textBox2)
-                {
-                    // Elimina cualquier suscripción anterior para evitar múltiples llamadas
-                    textBox2.KeyPress -= TextBox_KeyPress;
-                    // Agrega el evento KeyPress para manejar el reemplazo
-                    textBox2.KeyPress += TextBox_KeyPress;
-                }
             }
         }
 
@@ -1175,5 +1211,59 @@ namespace ComercializadoraVerdum
         {
 
         }
+
+        private void dataGridView1_RowsRemoved(object sender, DataGridViewRowsRemovedEventArgs e)
+        {
+            RecalcularResumenProductos();
+        }
+
+        private void RecalcularResumenProductos()
+        {
+            // Limpia el resumen de productos actual
+            resumenProductos.Clear();
+
+            // Recorre todas las filas del DataGridView
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                // Ignora las filas nuevas que aún no están completas
+                if (row.IsNewRow) continue;
+
+                string producto = row.Cells["Producto"].FormattedValue?.ToString();
+                string precio = row.Cells["Precio"].Value?.ToString();
+                string canastas = row.Cells["Canastas"].Value?.ToString();
+                string pesoBruto = row.Cells["Pesobruto"].Value?.ToString();
+                string cantidad = row.Cells["Cantidad"].Value?.ToString();
+                string total = row.Cells["Total"].Value?.ToString();
+
+                if (!string.IsNullOrEmpty(producto) &&
+                    !string.IsNullOrEmpty(precio) &&
+                    !string.IsNullOrEmpty(canastas) &&
+                    !string.IsNullOrEmpty(pesoBruto) &&
+                    !string.IsNullOrEmpty(cantidad) &&
+                    !string.IsNullOrEmpty(total))
+                {
+                    var detalle = new ProductoDetalle
+                    {
+                        Precio = precio,
+                        Canastas = canastas,
+                        PesoBruto = pesoBruto,
+                        Cantidad = cantidad,
+                        Total = total
+                    };
+
+                    var clave = (producto, precio);
+
+                    if (!resumenProductos.ContainsKey(clave))
+                    {
+                        resumenProductos[clave] = new List<ProductoDetalle>();
+                    }
+                    resumenProductos[clave].Add(detalle);
+                }
+            }
+
+            // Actualiza el resumen de venta
+            ActualizarResumenVentaLabel();
+        }
+
     }
 }

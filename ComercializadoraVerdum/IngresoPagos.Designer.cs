@@ -29,11 +29,13 @@
         private void InitializeComponent()
         {
             this.grbIngresoPagos = new System.Windows.Forms.GroupBox();
-            this.txtefectivo = new System.Windows.Forms.TextBox();
-            this.lblefectivo = new System.Windows.Forms.Label();
-            this.lblTransferencia = new System.Windows.Forms.Label();
-            this.txttransferencia = new System.Windows.Forms.TextBox();
             this.btnIngresoPagos = new System.Windows.Forms.Button();
+            this.txttransferencia = new System.Windows.Forms.TextBox();
+            this.lblTransferencia = new System.Windows.Forms.Label();
+            this.lblefectivo = new System.Windows.Forms.Label();
+            this.txtefectivo = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.lblDeuda = new System.Windows.Forms.Label();
             this.grbIngresoPagos.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -44,29 +46,31 @@
             this.grbIngresoPagos.Controls.Add(this.lblTransferencia);
             this.grbIngresoPagos.Controls.Add(this.lblefectivo);
             this.grbIngresoPagos.Controls.Add(this.txtefectivo);
-            this.grbIngresoPagos.Location = new System.Drawing.Point(3, 2);
+            this.grbIngresoPagos.Location = new System.Drawing.Point(12, 39);
             this.grbIngresoPagos.Name = "grbIngresoPagos";
             this.grbIngresoPagos.Size = new System.Drawing.Size(257, 99);
             this.grbIngresoPagos.TabIndex = 0;
             this.grbIngresoPagos.TabStop = false;
             // 
-            // txtefectivo
+            // btnIngresoPagos
             // 
-            this.txtefectivo.Location = new System.Drawing.Point(9, 36);
-            this.txtefectivo.Multiline = true;
-            this.txtefectivo.Name = "txtefectivo";
-            this.txtefectivo.Size = new System.Drawing.Size(108, 20);
-            this.txtefectivo.TabIndex = 0;
+            this.btnIngresoPagos.Enabled = false;
+            this.btnIngresoPagos.Location = new System.Drawing.Point(10, 62);
+            this.btnIngresoPagos.Name = "btnIngresoPagos";
+            this.btnIngresoPagos.Size = new System.Drawing.Size(237, 23);
+            this.btnIngresoPagos.TabIndex = 4;
+            this.btnIngresoPagos.Text = "Guardar";
+            this.btnIngresoPagos.UseVisualStyleBackColor = true;
+            this.btnIngresoPagos.Click += new System.EventHandler(this.btnIngresoPagos_Click);
             // 
-            // lblefectivo
+            // txttransferencia
             // 
-            this.lblefectivo.AutoSize = true;
-            this.lblefectivo.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblefectivo.Location = new System.Drawing.Point(7, 13);
-            this.lblefectivo.Name = "lblefectivo";
-            this.lblefectivo.Size = new System.Drawing.Size(65, 18);
-            this.lblefectivo.TabIndex = 1;
-            this.lblefectivo.Text = "Efectivo:";
+            this.txttransferencia.Location = new System.Drawing.Point(139, 36);
+            this.txttransferencia.Multiline = true;
+            this.txttransferencia.Name = "txttransferencia";
+            this.txttransferencia.Size = new System.Drawing.Size(108, 20);
+            this.txttransferencia.TabIndex = 3;
+            this.txttransferencia.TextChanged += new System.EventHandler(this.txttransferencia_TextChanged);
             // 
             // lblTransferencia
             // 
@@ -78,35 +82,58 @@
             this.lblTransferencia.TabIndex = 2;
             this.lblTransferencia.Text = "Transferencia:";
             // 
-            // txttransferencia
+            // lblefectivo
             // 
-            this.txttransferencia.Location = new System.Drawing.Point(139, 36);
-            this.txttransferencia.Multiline = true;
-            this.txttransferencia.Name = "txttransferencia";
-            this.txttransferencia.Size = new System.Drawing.Size(108, 20);
-            this.txttransferencia.TabIndex = 3;
+            this.lblefectivo.AutoSize = true;
+            this.lblefectivo.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblefectivo.Location = new System.Drawing.Point(7, 13);
+            this.lblefectivo.Name = "lblefectivo";
+            this.lblefectivo.Size = new System.Drawing.Size(65, 18);
+            this.lblefectivo.TabIndex = 1;
+            this.lblefectivo.Text = "Efectivo:";
             // 
-            // btnIngresoPagos
+            // txtefectivo
             // 
-            this.btnIngresoPagos.Location = new System.Drawing.Point(10, 62);
-            this.btnIngresoPagos.Name = "btnIngresoPagos";
-            this.btnIngresoPagos.Size = new System.Drawing.Size(237, 23);
-            this.btnIngresoPagos.TabIndex = 4;
-            this.btnIngresoPagos.Text = "Guardar";
-            this.btnIngresoPagos.UseVisualStyleBackColor = true;
-            this.btnIngresoPagos.Click += new System.EventHandler(this.btnIngresoPagos_Click);
+            this.txtefectivo.Location = new System.Drawing.Point(9, 36);
+            this.txtefectivo.Multiline = true;
+            this.txtefectivo.Name = "txtefectivo";
+            this.txtefectivo.Size = new System.Drawing.Size(108, 20);
+            this.txtefectivo.TabIndex = 0;
+            this.txtefectivo.TextChanged += new System.EventHandler(this.txtefectivo_TextChanged);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(12, 18);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(93, 18);
+            this.label1.TabIndex = 2;
+            this.label1.Text = "Valor Deuda:";
+            // 
+            // lblDeuda
+            // 
+            this.lblDeuda.AutoSize = true;
+            this.lblDeuda.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblDeuda.Location = new System.Drawing.Point(111, 18);
+            this.lblDeuda.Name = "lblDeuda";
+            this.lblDeuda.Size = new System.Drawing.Size(0, 18);
+            this.lblDeuda.TabIndex = 3;
             // 
             // IngresoPagos
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(266, 105);
+            this.ClientSize = new System.Drawing.Size(292, 150);
+            this.Controls.Add(this.lblDeuda);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.grbIngresoPagos);
             this.Name = "IngresoPagos";
             this.Text = "IngresoPagos";
             this.grbIngresoPagos.ResumeLayout(false);
             this.grbIngresoPagos.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -118,5 +145,7 @@
         private System.Windows.Forms.Button btnIngresoPagos;
         private System.Windows.Forms.TextBox txttransferencia;
         private System.Windows.Forms.Label lblTransferencia;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label lblDeuda;
     }
 }

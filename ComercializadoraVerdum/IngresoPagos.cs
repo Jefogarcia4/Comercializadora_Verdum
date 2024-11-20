@@ -15,10 +15,11 @@ namespace ComercializadoraVerdum
     {
         public decimal ValorEfectivo { get; private set; } = 0;
         public decimal ValorTransferencia { get; private set; } = 0;
-        public IngresoPagos()
+        public IngresoPagos(string valorDeuda)
         {
             this.Icon = new Icon("Images/verdum-logo-icono.ico");
             InitializeComponent();
+            lblDeuda.Text = valorDeuda;
         }
 
         private void btnIngresoPagos_Click(object sender, EventArgs e)
@@ -52,5 +53,75 @@ namespace ComercializadoraVerdum
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
+
+        private void txtefectivo_TextChanged(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtefectivo.Text))
+            {
+                btnIngresoPagos.Enabled = false;
+                return;
+            }
+
+            // Guarda la posición actual del cursor
+            int cursorPosition = txtefectivo.SelectionStart;
+
+            // Elimina caracteres no numéricos temporalmente
+            string rawText = new string(txtefectivo.Text.Where(c => char.IsDigit(c)).ToArray());
+
+            if (decimal.TryParse(rawText, out decimal valorPagado))
+            {
+                // Verifica si el valor es válido
+                btnIngresoPagos.Enabled = valorPagado >= 0;
+
+                // Aplica el formato con separadores de miles
+                txtefectivo.Text = valorPagado.ToString("N0");
+
+                // Restaura la posición del cursor ajustado según los separadores de miles
+                int delta = txtefectivo.Text.Length - rawText.Length;
+                txtefectivo.SelectionStart = cursorPosition + delta;
+            }
+            else
+            {
+                // Si el texto no es válido, limpia el campo
+                txtefectivo.Text = string.Empty;
+                btnIngresoPagos.Enabled = false;
+            }
+        }
+
+
+        private void txttransferencia_TextChanged(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txttransferencia.Text))
+            {
+                btnIngresoPagos.Enabled = false;
+                return;
+            }
+
+            // Guarda la posición actual del cursor
+            int cursorPosition = txttransferencia.SelectionStart;
+
+            // Elimina caracteres no numéricos temporalmente
+            string rawText = new string(txttransferencia.Text.Where(c => char.IsDigit(c)).ToArray());
+
+            if (decimal.TryParse(rawText, out decimal valorPagado))
+            {
+                // Verifica si el valor es válido
+                btnIngresoPagos.Enabled = valorPagado >= 0;
+
+                // Aplica el formato con separadores de miles
+                txttransferencia.Text = valorPagado.ToString("N0");
+
+                // Restaura la posición del cursor ajustado según los separadores de miles
+                int delta = txttransferencia.Text.Length - rawText.Length;
+                txttransferencia.SelectionStart = cursorPosition + delta;
+            }
+            else
+            {
+                // Si el texto no es válido, limpia el campo
+                txttransferencia.Text = string.Empty;
+                btnIngresoPagos.Enabled = false;
+            }
+        }
+
     }
 }

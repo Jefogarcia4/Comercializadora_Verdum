@@ -62,7 +62,7 @@ namespace ComercializadoraVerdum
             dataGridView1.Columns.Add("TotalCompra", "Total Compra");
             //dataGridView1.Columns.Add("Descuento", "Descuento");
             //dataGridView1.Columns.Add("TotalAbona", "TotalAbona");
-            dataGridView1.Columns.Add("TotalPagar", "Total Pagar");
+            dataGridView1.Columns.Add("TotalPagar", "Total Pagado");
 
             DataGridViewButtonColumn printButtonColumn = new DataGridViewButtonColumn
             {
@@ -282,11 +282,12 @@ namespace ComercializadoraVerdum
                     DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
                     int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
                     string nombreCliente = row.Cells["NombreCliente"].Value.ToString();
-                    SaldarDeuda(nombreCliente, ventaId);
+                    string totalPago = row.Cells["TotalPagar"].Value.ToString();
+                    SaldarDeuda(nombreCliente, ventaId, totalPago);
                 }
             }
         }
-        private void SaldarDeuda(string nombreCliente, int ventaId)
+        private void SaldarDeuda(string nombreCliente, int ventaId,string totalPago)
         {
             var colombianCulture = new CultureInfo("es-CO");
 
@@ -307,41 +308,37 @@ namespace ComercializadoraVerdum
 
                 if (result == DialogResult.Yes)
                 {
-                    using (var form = new IngresoPagos())
+                    using (var form = new IngresoPagos(saldoPendiente))
                     {
                         if (form.ShowDialog() == DialogResult.OK)
                         {
                             decimal efectivo = form.ValorEfectivo;
                             decimal transferencia = form.ValorTransferencia;
 
-                            if (efectivo + transferencia >= saldoDeuda)
-                            {
-                                SaldarDeudaCliente(nombreCliente, saldoDeuda, ventaId, efectivo, transferencia);
-                            }
-                            else
-                            {
-                                MessageBox.Show(
-                                    $"El monto ingresado no cubre la deuda pendiente. Deuda: ${saldoPendiente}, Monto ingresado: ${(efectivo + transferencia).ToString("N2", colombianCulture)}",
-                                    "Error",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error);
-                            }
+                           
+                                SaldarDeudaCliente(nombreCliente, saldoDeuda, ventaId, efectivo, transferencia, totalPago);
+                           
                         }
                     }
                 }
             }
         }
-        private void SaldarDeudaCliente(string nombreCliente, decimal saldo, int ventaId, decimal valorEfectivo, decimal valorTransferencia)
+        private void SaldarDeudaCliente(string nombreCliente, decimal saldo, int ventaId, decimal valorEfectivo, decimal valorTransferencia,string totalPago)
         {
             try
             {
+                decimal total_pagado = Convert.ToDecimal(totalPago);
+                decimal ingreso_total = valorEfectivo + valorTransferencia;
+                decimal saldo_resta  = saldo - ingreso_total;
+                decimal total_pagar = ingreso_total + total_pagado;
                 string connectionString = configuration.GetConnectionString("DefaultConnection");
                 using (var connection = new OleDbConnection(connectionString))
                 {
                     connection.Open();
-                    string query = "UPDATE Clientes SET SaldoDeuda = 0 WHERE NombreCliente = ?";
+                    string query = "UPDATE Clientes SET SaldoDeuda = ? WHERE NombreCliente = ?";
                     using (var command = new OleDbCommand(query, connection))
                     {
+                        command.Parameters.AddWithValue("?", saldo_resta);
                         command.Parameters.AddWithValue("?", nombreCliente);
                         int rowsAffected = command.ExecuteNonQuery();
 
@@ -355,15 +352,16 @@ namespace ComercializadoraVerdum
                         }
                     }
 
-                    string query2 = "UPDATE Ventas SET TotalPagar = TotalCompra WHERE VentaId = ?";
+                    string query2 = "UPDATE Ventas SET TotalPagar = ? WHERE VentaId = ?";
                     using (var command = new OleDbCommand(query2, connection))
                     {
+                        command.Parameters.AddWithValue("?", total_pagar);
                         command.Parameters.AddWithValue("?", ventaId);
                         int rowsAffected = command.ExecuteNonQuery();
 
                         if (rowsAffected > 0)
                         {
-                            MessageBox.Show($"La deuda del Cliente: {nombreCliente} ha sido saldada exitosamente.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show($"Pago {nombreCliente} ha sido exitoso.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             LoadData();
                         }
                         else
@@ -442,13 +440,13 @@ namespace ComercializadoraVerdum
             decimal totalVenta = 0;
             decimal totalPeso = 0;
             string query = @"
-                    SELECT p.Nombre, dv.Precio, SUM(dv.Cantidad) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal, v.Consecutivo, v.Fecha 
-                    FROM ((DetalleVentas dv
-                    INNER JOIN Productos p ON dv.ProductoId = p.Id)
-                    INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
-                    INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
-                    WHERE dv.VentaId = ?
-                    GROUP BY p.Nombre, dv.Precio, v.Consecutivo, v.Fecha";
+            SELECT p.Nombre, dv.Precio, SUM(dv.Cantidad) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal, v.Consecutivo, v.Fecha 
+            FROM ((DetalleVentas dv
+            INNER JOIN Productos p ON dv.ProductoId = p.Id)
+            INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
+            INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
+            WHERE dv.VentaId = ?
+            GROUP BY p.Nombre, dv.Precio, v.Consecutivo, v.Fecha";
 
             _detalleventas = new List<DetalleVenta>();
 
@@ -688,7 +686,7 @@ namespace ComercializadoraVerdum
                 offsetY += 60;
             }
 
-            string prefacturaVenta = "PREFECTURA DE VENTA";
+            string prefacturaVenta = "PREFACTURA DE VENTA";
             float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold)).Width;
             float prefacturaVentaX = (pageWidth - prefacturaVentaWidth) / 2;
             g.DrawString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);

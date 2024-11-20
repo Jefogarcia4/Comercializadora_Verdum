@@ -48,8 +48,8 @@ namespace ComercializadoraVerdum
             this.panel1 = new System.Windows.Forms.Panel();
             this.lblTransferencia = new System.Windows.Forms.Label();
             this.txtAbonaTransferencia = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.lblDevuelta = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.grbResumenDeVenta.SuspendLayout();
@@ -67,6 +67,7 @@ namespace ComercializadoraVerdum
             this.dataGridView1.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellValueChanged);
             this.dataGridView1.DefaultValuesNeeded += new System.Windows.Forms.DataGridViewRowEventHandler(this.dataGridView1_DefaultValuesNeeded);
             this.dataGridView1.EditingControlShowing += new System.Windows.Forms.DataGridViewEditingControlShowingEventHandler(this.dataGridView1_EditingControlShowing);
+            this.dataGridView1.RowsRemoved += new System.Windows.Forms.DataGridViewRowsRemovedEventHandler(this.dataGridView1_RowsRemoved);
             // 
             // lblNombreCliente
             // 
@@ -209,12 +210,10 @@ namespace ComercializadoraVerdum
             // 
             // grbResumenDeVenta
             // 
-            this.grbResumenDeVenta.Controls.Add(this.lblDevuelta);
-            this.grbResumenDeVenta.Controls.Add(this.label1);
             this.grbResumenDeVenta.Controls.Add(this.panel1);
             this.grbResumenDeVenta.Location = new System.Drawing.Point(12, 236);
             this.grbResumenDeVenta.Name = "grbResumenDeVenta";
-            this.grbResumenDeVenta.Size = new System.Drawing.Size(641, 137);
+            this.grbResumenDeVenta.Size = new System.Drawing.Size(344, 137);
             this.grbResumenDeVenta.TabIndex = 23;
             this.grbResumenDeVenta.TabStop = false;
             // 
@@ -246,26 +245,27 @@ namespace ComercializadoraVerdum
             this.txtAbonaTransferencia.TabIndex = 25;
             this.txtAbonaTransferencia.TextChanged += new System.EventHandler(this.txtAbonaTransferencia_TextChanged);
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(350, 16);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(64, 16);
-            this.label1.TabIndex = 19;
-            this.label1.Text = "Devuelta:";
-            // 
             // lblDevuelta
             // 
             this.lblDevuelta.AutoSize = true;
-            this.lblDevuelta.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblDevuelta.Location = new System.Drawing.Point(416, 17);
+            this.lblDevuelta.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblDevuelta.Location = new System.Drawing.Point(443, 260);
             this.lblDevuelta.Name = "lblDevuelta";
-            this.lblDevuelta.Size = new System.Drawing.Size(14, 16);
-            this.lblDevuelta.TabIndex = 20;
-            this.lblDevuelta.Tag = "";
+            this.lblDevuelta.Size = new System.Drawing.Size(20, 24);
+            this.lblDevuelta.TabIndex = 27;
             this.lblDevuelta.Text = "0";
+            this.lblDevuelta.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.Location = new System.Drawing.Point(360, 266);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(77, 17);
+            this.label2.TabIndex = 26;
+            this.label2.Text = "Devuelta:";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // FrmHome
             // 
@@ -273,6 +273,8 @@ namespace ComercializadoraVerdum
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ButtonFace;
             this.ClientSize = new System.Drawing.Size(657, 448);
+            this.Controls.Add(this.lblDevuelta);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.txtAbonaTransferencia);
             this.Controls.Add(this.lblTransferencia);
             this.Controls.Add(this.grbResumenDeVenta);
@@ -291,7 +293,6 @@ namespace ComercializadoraVerdum
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.grbResumenDeVenta.ResumeLayout(false);
-            this.grbResumenDeVenta.PerformLayout();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);
@@ -319,8 +320,8 @@ namespace ComercializadoraVerdum
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label lblTransferencia;
         private System.Windows.Forms.TextBox txtAbonaTransferencia;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label lblDevuelta;
+        private System.Windows.Forms.Label label2;
     }
 }
 
