@@ -442,13 +442,13 @@ namespace ComercializadoraVerdum
             decimal totalVenta = 0;
             decimal totalPeso = 0;
             string query = @"
-                    SELECT p.Nombre, dv.Precio, SUM(dv.Cantidad) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal
+                    SELECT p.Nombre, dv.Precio, SUM(dv.Cantidad) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal, v.Consecutivo, v.Fecha 
                     FROM ((DetalleVentas dv
                     INNER JOIN Productos p ON dv.ProductoId = p.Id)
                     INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
                     INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
                     WHERE dv.VentaId = ?
-                    GROUP BY p.Nombre, dv.Precio";
+                    GROUP BY p.Nombre, dv.Precio, v.Consecutivo, v.Fecha";
 
             _detalleventas = new List<DetalleVenta>();
 
@@ -471,7 +471,12 @@ namespace ComercializadoraVerdum
                                 detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
                                 detalle.PesoBruto = Convert.ToDecimal(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
                                 detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
-                                
+                                _consecutivo = Convert.ToString(reader["Consecutivo"]);
+                                _fecha = Convert.ToString(reader["Fecha"]);
+                                if (DateTime.TryParse(_fecha, out DateTime fechaParsed))
+                                {
+                                    _fecha = fechaParsed.ToString("dd/MM/yyyy"); // Formatea solo la fecha
+                                }
                                 _detalleventas.Add(detalle);
                                 totalVenta += Convert.ToDecimal(detalle.ValorTotal);
                                 totalPeso += detalle.PesoBruto;
