@@ -114,7 +114,7 @@ namespace ComercializadoraVerdum
         {
             StringBuilder resumenVenta = new StringBuilder();
             var cultura = new CultureInfo("es-CO");
-            resumenVenta.AppendLine("Producto    | Precio    | Canastas   | Cantidad   | Valor");
+            resumenVenta.AppendLine("Producto | Precio | Canastas | Peso Neto| Valor");
             resumenVenta.AppendLine("---------------------------------------------------------");
 
             foreach (var producto in resumenProductos)
@@ -341,7 +341,7 @@ namespace ComercializadoraVerdum
 
             dataGridView1.Columns.Add("Canastas", "Canastas");
             dataGridView1.Columns.Add("PesoBruto", "PesoBruto");
-            dataGridView1.Columns.Add("Cantidad", "Cantidad");
+            dataGridView1.Columns.Add("Cantidad", "PesoNeto");
             dataGridView1.Columns.Add("Total", "Total");
 
             dataGridView1.Columns["Canasta P. KG"].Width = 80;

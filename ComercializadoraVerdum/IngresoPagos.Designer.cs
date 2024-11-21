@@ -36,6 +36,8 @@
             this.txtefectivo = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.lblDeuda = new System.Windows.Forms.Label();
+            this.lblDevuelve = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
             this.grbIngresoPagos.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -46,7 +48,7 @@
             this.grbIngresoPagos.Controls.Add(this.lblTransferencia);
             this.grbIngresoPagos.Controls.Add(this.lblefectivo);
             this.grbIngresoPagos.Controls.Add(this.txtefectivo);
-            this.grbIngresoPagos.Location = new System.Drawing.Point(12, 39);
+            this.grbIngresoPagos.Location = new System.Drawing.Point(12, 89);
             this.grbIngresoPagos.Name = "grbIngresoPagos";
             this.grbIngresoPagos.Size = new System.Drawing.Size(257, 99);
             this.grbIngresoPagos.TabIndex = 0;
@@ -120,16 +122,38 @@
             this.lblDeuda.Size = new System.Drawing.Size(0, 18);
             this.lblDeuda.TabIndex = 3;
             // 
+            // lblDevuelve
+            // 
+            this.lblDevuelve.AutoSize = true;
+            this.lblDevuelve.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblDevuelve.Location = new System.Drawing.Point(129, 46);
+            this.lblDevuelve.Name = "lblDevuelve";
+            this.lblDevuelve.Size = new System.Drawing.Size(16, 18);
+            this.lblDevuelve.TabIndex = 5;
+            this.lblDevuelve.Text = "0";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(12, 46);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(110, 18);
+            this.label3.TabIndex = 4;
+            this.label3.Text = "Valor Devuelve:";
+            // 
             // IngresoPagos
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(292, 150);
+            this.ClientSize = new System.Drawing.Size(287, 200);
+            this.Controls.Add(this.lblDevuelve);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.lblDeuda);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.grbIngresoPagos);
             this.Name = "IngresoPagos";
-            this.Text = "IngresoPagos";
+            this.Text = "Saldar Deuda";
             this.grbIngresoPagos.ResumeLayout(false);
             this.grbIngresoPagos.PerformLayout();
             this.ResumeLayout(false);
@@ -147,5 +171,7 @@
         private System.Windows.Forms.Label lblTransferencia;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label lblDeuda;
+        private System.Windows.Forms.Label lblDevuelve;
+        private System.Windows.Forms.Label label3;
     }
 }

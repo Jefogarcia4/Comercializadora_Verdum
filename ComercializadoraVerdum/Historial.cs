@@ -56,14 +56,11 @@ namespace ComercializadoraVerdum
             dataGridView1.Columns.Add("Fecha", "Fecha");
             dataGridView1.Columns.Add("Consecutivo", "Consecutivo");
             dataGridView1.Columns.Add("NombreCliente", "Nombre Cliente");
-            dataGridView1.Columns.Add("TotalProductos", "Total Productos");
             dataGridView1.Columns.Add("TotalCanastas", "Total Canastas");
             dataGridView1.Columns.Add("TotalPesoBruto", "Total Peso Bruto");
             dataGridView1.Columns.Add("TotalCompra", "Total Compra");
-            //dataGridView1.Columns.Add("Descuento", "Descuento");
-            //dataGridView1.Columns.Add("TotalAbona", "TotalAbona");
             dataGridView1.Columns.Add("TotalPagar", "Total Pagado");
-
+            dataGridView1.Columns.Add("SaldoDeuda", "Saldo Deuda");
             DataGridViewButtonColumn printButtonColumn = new DataGridViewButtonColumn
             {
                 Name = "Imprimir",
@@ -87,6 +84,7 @@ namespace ComercializadoraVerdum
                 UseColumnTextForButtonValue = true
             };
             dataGridView1.Columns.Add(saldarDeudaPendiente);
+            
 
             ToolTip toolTip = new ToolTip();
             toolTip.SetToolTip(btnVolver, "Cerrar y volver al formulario anterior");
@@ -106,24 +104,7 @@ namespace ComercializadoraVerdum
 
             LoadData();
         }
-
-        //private void dataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
-        //{
-        //    if (dataGridView1.Columns[e.ColumnIndex].Name == "Saldar Deuda")
-        //    {
-        //        string nombreCliente = dataGridView1.Rows[e.RowIndex].Cells["nombreCliente"].Value.ToString();
-
-        //        if (!saldoDeudasCache.ContainsKey(nombreCliente))
-        //        {
-        //            decimal saldoDeuda = ObtenerSaldoDeuda(nombreCliente);
-        //            saldoDeudasCache[nombreCliente] = saldoDeuda;
-        //        }
-
-        //        decimal saldo = saldoDeudasCache[nombreCliente];
-
-        //        e.Value = saldo > 0 ? "Saldar Deuda" : "";  
-        //    }
-        //}
+        
         private decimal ObtenerSaldoDeuda(string nombreCliente)
         {
             decimal saldoDeuda = 0;
@@ -154,12 +135,21 @@ namespace ComercializadoraVerdum
                 var colombianCulture = new CultureInfo("es-CO");
 
                 connection.Open();
-                string query = "SELECT * FROM Ventas";
+
+                // Consulta SQL con JOIN para obtener el saldo de deuda
+                string query = @"
+                SELECT V.VentaId, V.Fecha, V.Consecutivo, C.NombreCliente, V.TotalCanastas, 
+                        V.TotalPesoBruto, V.TotalCompra, V.TotalPagar, C.SaldoDeuda
+                    FROM Ventas V
+                    LEFT JOIN Clientes C 
+                        ON CStr(V.NombreCliente) = CStr(C.NombreCliente)
+                    ORDER BY V.VentaId ASC;
+                    ";
 
                 if (!string.IsNullOrEmpty(filterQuery))
                 {
                     query += " WHERE " + filterQuery;
-                    query += " ORDER BY Fecha";
+                    query += " ORDER BY V.Fecha";
                 }
 
                 OleDbDataAdapter adapter = new OleDbDataAdapter(query, connection);
@@ -172,22 +162,20 @@ namespace ComercializadoraVerdum
                 {
                     string totalPesoBruto = row["TotalPesoBruto"] != DBNull.Value ? Convert.ToDecimal(row["TotalPesoBruto"]).ToString("N2", colombianCulture) : "0";
                     string totalCompra = row["TotalCompra"] != DBNull.Value ? Convert.ToDecimal(row["TotalCompra"]).ToString("N2", colombianCulture) : "0";
-                    //string descuento = row["Descuento"] != DBNull.Value ? Convert.ToDecimal(row["Descuento"]).ToString("N2", colombianCulture) : "0";
-                    //string totalAbona = row["TotalAbona"] != DBNull.Value ? Convert.ToDecimal(row["TotalAbona"]).ToString("N2", colombianCulture) : "0";
                     string totalPagar = row["TotalPagar"] != DBNull.Value ? Convert.ToDecimal(row["TotalPagar"]).ToString("N2", colombianCulture) : "0";
+                    string saldoDeuda = row["SaldoDeuda"] != DBNull.Value ? Convert.ToDecimal(row["SaldoDeuda"]).ToString("N2", colombianCulture) : "0";
+                    Console.WriteLine($"Saldo Deuda: {saldoDeuda}");
 
                     dataGridView1.Rows.Add(
                         row["VentaId"] != DBNull.Value ? Convert.ToInt32(row["VentaId"]) : 0,
                         row["Fecha"] != DBNull.Value ? Convert.ToDateTime(row["Fecha"]).ToShortDateString() : "",
                         row["Consecutivo"] != DBNull.Value ? row["Consecutivo"].ToString() : "",
                         row["NombreCliente"] != DBNull.Value ? row["NombreCliente"].ToString() : "",
-                        row["TotalProductos"] != DBNull.Value ? row["TotalProductos"].ToString() : "0",
                         row["TotalCanastas"] != DBNull.Value ? row["TotalCanastas"].ToString() : "0",
                         totalPesoBruto,
                         totalCompra,
-                        //descuento,
-                        //totalAbona,
-                        totalPagar
+                        totalPagar,
+                        saldoDeuda 
                     );
                 }
             }
@@ -200,6 +188,7 @@ namespace ComercializadoraVerdum
                 connection.Close();
             }
         }
+
         private void BtnFiltrar_Click(object sender, EventArgs e)
         {
             if (datePickerStart.Value == null && string.IsNullOrWhiteSpace(txtCliente.Text))
@@ -440,13 +429,13 @@ namespace ComercializadoraVerdum
             decimal totalVenta = 0;
             decimal totalPeso = 0;
             string query = @"
-            SELECT p.Nombre, dv.Precio, SUM(dv.Cantidad) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal, v.Consecutivo, v.Fecha 
+            SELECT cl.NombreCliente, p.Nombre, dv.Precio, SUM(dv.Cantidad) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal, v.Consecutivo, v.Fecha 
             FROM ((DetalleVentas dv
             INNER JOIN Productos p ON dv.ProductoId = p.Id)
             INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
             INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
             WHERE dv.VentaId = ?
-            GROUP BY p.Nombre, dv.Precio, v.Consecutivo, v.Fecha";
+            GROUP BY cl.NombreCliente, p.Nombre, dv.Precio, v.Consecutivo, v.Fecha";
 
             _detalleventas = new List<DetalleVenta>();
 
@@ -465,12 +454,14 @@ namespace ComercializadoraVerdum
                             {
 
                                 var detalle = new DetalleVenta();
-                                detalle.Nombre = reader.GetString(0);
+                                detalle.Nombre = reader.GetString(1);
                                 detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
                                 detalle.PesoBruto = Convert.ToDecimal(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
                                 detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
                                 _consecutivo = Convert.ToString(reader["Consecutivo"]);
                                 _fecha = Convert.ToString(reader["Fecha"]);
+                                _nombreCliente = Convert.ToString(reader["NombreCliente"]);
+
                                 if (DateTime.TryParse(_fecha, out DateTime fechaParsed))
                                 {
                                     _fecha = fechaParsed.ToString("dd/MM/yyyy"); // Formatea solo la fecha
@@ -545,7 +536,8 @@ namespace ComercializadoraVerdum
 
             var colombianCulture = new CultureInfo("es-CO");
 
-            var resumenProductos = new Dictionary<string, List<(decimal Precio, decimal Peso, decimal ValorTotal)>>();
+            // Diccionario para resumir productos agrupados por Producto y Precio
+            var resumenProductos = new Dictionary<(string Producto, decimal Precio), (decimal TotalPeso, decimal TotalValor, int TotalCanastas)>();
 
             foreach (DataRow row in dt.Rows)
             {
@@ -553,24 +545,35 @@ namespace ComercializadoraVerdum
                 decimal precio = Convert.ToDecimal(row["Precio"]);
                 decimal peso = Convert.ToDecimal(row["PesoBruto"]);
                 decimal valorTotal = Convert.ToDecimal(row["ValorTotal"]);
-                decimal peso_neto = Convert.ToDecimal(row["Cantidad"]);
+                int canastas = Convert.ToInt32(row["Canastas"]);
+                decimal pesoNeto = Convert.ToDecimal(row["Cantidad"]);
+
                 string precioFormateado = precio.ToString("N2", colombianCulture);
                 string pesoFormateado = peso.ToString("N1", colombianCulture);
                 string valorTotalFormateado = valorTotal.ToString("N2", colombianCulture);
 
                 mensaje += $"Nombre Producto: {nombreProducto}\n" +
                            $"Precio: {precioFormateado}\n" +
-                           $"Total Canastas: {row["Canastas"]}\n" +
+                           $"Total Canastas: {canastas}\n" +
                            $"Peso Bruto: {pesoFormateado}\n" +
-                           $"Cantidad: {row["Cantidad"]}\n" +
+                           $"Cantidad: {pesoNeto}\n" +
                            $"Valor Total: {valorTotalFormateado}\n" +
                            "-------------------------------------------------------------------------------\n";
 
-                if (!resumenProductos.ContainsKey(nombreProducto))
+                // Actualizar resumen agrupado por Producto y Precio
+                var clave = (Producto: nombreProducto, Precio: precio);
+
+                if (!resumenProductos.ContainsKey(clave))
                 {
-                    resumenProductos[nombreProducto] = new List<(decimal Precio, decimal Peso, decimal ValorTotal)>();
+                    resumenProductos[clave] = (0, 0, 0);
                 }
-                resumenProductos[nombreProducto].Add((precio, peso_neto, valorTotal));
+
+                var productoActual = resumenProductos[clave];
+                resumenProductos[clave] = (
+                    TotalPeso: productoActual.TotalPeso + pesoNeto,
+                    TotalValor: productoActual.TotalValor + valorTotal,
+                    TotalCanastas: productoActual.TotalCanastas + canastas
+                );
             }
 
             mensaje += "\n";
@@ -579,24 +582,24 @@ namespace ComercializadoraVerdum
 
             foreach (var producto in resumenProductos)
             {
-                string nombreProducto = producto.Key;
+                var clave = producto.Key;
                 var detalles = producto.Value;
 
-                mensaje += $"Producto: {nombreProducto}\n";
-                foreach (var detalle in detalles)
-                {
-                    string precioFormateado = detalle.Precio.ToString("N2", colombianCulture);
-                    string pesoFormateado = detalle.Peso.ToString("N1", colombianCulture);
-                    string valorTotalFormateado = detalle.ValorTotal.ToString("N2", colombianCulture);
+                string precioFormateado = clave.Precio.ToString("N2", colombianCulture);
+                string totalPesoFormateado = detalles.TotalPeso.ToString("N1", colombianCulture);
+                string totalValorFormateado = detalles.TotalValor.ToString("N2", colombianCulture);
 
-                    mensaje += $"Precio: {precioFormateado}, Peso: {pesoFormateado}, Valor Total: {valorTotalFormateado}\n";
-                }
-                mensaje += "-------------------------------------------------------------------------------\n";
+                mensaje += $"Producto: {clave.Producto}\n" +
+                           $"Precio: {precioFormateado}\n" +
+                           $"Total Peso: {totalPesoFormateado} Kg\n" +
+                           $"Total Valor: {totalValorFormateado}\n" +
+                           $"Total Canastas: {detalles.TotalCanastas}\n" +
+                           "-------------------------------------------------------------------------------\n";
             }
 
             MessageBox.Show(mensaje, "Detalles de la Venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
-        private void SetButtonImageFromUrl()
+        public void SetButtonImageFromUrl()
         {
             try
             {
@@ -646,14 +649,15 @@ namespace ComercializadoraVerdum
         }
         private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
-            if (e.RowIndex >= 0)
-            {
-                if (e.ColumnIndex <= 10)
-                {
-                    MessageBox.Show("Solo se permite Imprimir o ver el Detalle de una Venta.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
+           
         }
+
+        private void btnReporteMovimientos_Click(object sender, EventArgs e)
+        {
+            ReporteMovimientos formInformeMovimientos = new ReporteMovimientos();
+            formInformeMovimientos.Show();
+        }
+
         private void PrintDocument_BeginPrint(object sender, PrintEventArgs e)
         {
             PrintDocument printDocument = (PrintDocument)sender;

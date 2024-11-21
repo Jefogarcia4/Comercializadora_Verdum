@@ -15,11 +15,13 @@ namespace ComercializadoraVerdum
     {
         public decimal ValorEfectivo { get; private set; } = 0;
         public decimal ValorTransferencia { get; private set; } = 0;
+        public decimal ValorDeuda { get; private set; } = 0;
         public IngresoPagos(string valorDeuda)
         {
             this.Icon = new Icon("Images/verdum-logo-icono.ico");
             InitializeComponent();
             lblDeuda.Text = valorDeuda;
+            ValorDeuda = Convert.ToDecimal(valorDeuda);
         }
 
         private void btnIngresoPagos_Click(object sender, EventArgs e)
@@ -76,6 +78,14 @@ namespace ComercializadoraVerdum
                 // Aplica el formato con separadores de miles
                 txtefectivo.Text = valorPagado.ToString("N0");
 
+                if (decimal.TryParse(txttransferencia.Text, out decimal valorTransferencia))
+                {
+                    valorPagado += valorTransferencia;
+                }
+
+                decimal devuelta = valorPagado - ValorDeuda;
+                lblDevuelve.Text = devuelta.ToString("C0");
+
                 // Restaura la posición del cursor ajustado según los separadores de miles
                 int delta = txtefectivo.Text.Length - rawText.Length;
                 txtefectivo.SelectionStart = cursorPosition + delta;
@@ -111,6 +121,14 @@ namespace ComercializadoraVerdum
                 // Aplica el formato con separadores de miles
                 txttransferencia.Text = valorPagado.ToString("N0");
 
+                if (decimal.TryParse(txtefectivo.Text, out decimal valorEfectivo))
+                {
+                    valorPagado += valorEfectivo;
+                }
+
+                decimal devuelta = valorPagado - ValorDeuda;
+                lblDevuelve.Text = devuelta.ToString("C0");
+
                 // Restaura la posición del cursor ajustado según los separadores de miles
                 int delta = txttransferencia.Text.Length - rawText.Length;
                 txttransferencia.SelectionStart = cursorPosition + delta;
@@ -122,6 +140,5 @@ namespace ComercializadoraVerdum
                 btnIngresoPagos.Enabled = false;
             }
         }
-
     }
 }

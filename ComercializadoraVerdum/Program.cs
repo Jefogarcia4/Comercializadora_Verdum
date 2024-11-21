@@ -29,7 +29,7 @@ namespace WindowsFormsApp
                 Historial historial = new Historial();
                 FrmHome frmHome = new FrmHome(historial);
                 instanciasFrmHome.Add(frmHome);
-
+                
                 frmHome.Show();
             }
 
