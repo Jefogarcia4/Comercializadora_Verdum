@@ -403,32 +403,6 @@ namespace ComercializadoraVerdum
             }
         }
 
-        private void CalculateTotalSum()
-        {
-            // Cultura colombiana
-            var culturaColombiana = new CultureInfo("es-CO");
-            decimal totalSum = 0;
-
-            foreach (DataGridViewRow row in dataGridView1.Rows)
-            {
-                if (row.IsNewRow) continue;
-
-                if (row.Cells["Total"].Value is string totalString)
-                {
-                    // Elimina el símbolo "$" y formatea el valor
-                    string valorNumerico = totalString.Replace("$", "").Trim();
-
-                    if (decimal.TryParse(valorNumerico, NumberStyles.Any, culturaColombiana, out decimal total))
-                    {
-                        totalSum += total;
-                    }
-                }
-            }
-
-            // Muestra el total formateado con la cultura colombiana
-            label3.Text = $"Total: {totalSum.ToString("N2", culturaColombiana)}";
-        }
-
         private void SaveButton_Click(object sender, EventArgs e)
         {
             CultureInfo cultureColombia = new CultureInfo("es-CO");
@@ -726,6 +700,31 @@ namespace ComercializadoraVerdum
             }
         }
 
+        private void CalculateTotalSum()
+        {
+            // Cultura colombiana
+            var culturaColombiana = new CultureInfo("es-CO");
+            decimal totalSum = 0;
+
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (row.IsNewRow) continue;
+
+                if (row.Cells["Total"].Value is string totalString)
+                {
+                    // Elimina el símbolo "$" y formatea el valor
+                    string valorNumerico = totalString.Replace("$", "").Trim();
+
+                    if (decimal.TryParse(valorNumerico, NumberStyles.Any, culturaColombiana, out decimal total))
+                    {
+                        totalSum += total;
+                    }
+                }
+            }
+
+            // Muestra el total formateado con la cultura colombiana
+            label3.Text = $"Total: {totalSum.ToString("N2", culturaColombiana)}";
+        }
         private decimal ObtenerSaldoFavor(string nombreCliente)
         {
             decimal saldofavor = 0;
@@ -1264,6 +1263,222 @@ namespace ComercializadoraVerdum
             // Actualiza el resumen de venta
             ActualizarResumenVentaLabel();
         }
+
+        //private void SaveButton_Click(object sender, EventArgs e)
+        //{
+        //    CultureInfo cultureColombia = new CultureInfo("es-CO");
+        //    try
+        //    {
+        //        if (connection.State != System.Data.ConnectionState.Open)
+        //        {
+        //            connection.Open();
+        //        }
+
+        //        try
+        //        {
+        //            string valor1Texto = label3.Text.Replace("Total:$", "");
+        //            string reemplazovalor1Texto = valor1Texto.Replace("Total: ", "").Replace(".", "").Replace(",", "");
+        //            if (int.TryParse(reemplazovalor1Texto, out int numero))
+        //            {
+        //                if (numero % 100 == 0)
+        //                {
+        //                    int ultimosDosDigitos = numero % 100;
+
+        //                    if (ultimosDosDigitos >= 50)
+        //                    {
+
+        //                        numero = (numero / 100) * 100 + 100;
+        //                    }
+        //                    else
+        //                    {
+
+        //                        numero = numero / 100;
+        //                    }
+        //                }
+        //            }
+        //            else
+        //            {
+        //                Console.WriteLine("El valor no es un número válido.");
+        //            }
+        //            if (decimal.TryParse(numero.ToString(), NumberStyles.Any, cultureColombia, out decimal totalCompra))
+        //            {
+        //                //Console.WriteLine($"Total de compra: {totalCompra}");
+        //            }
+        //            else
+        //            {
+        //                MessageBox.Show("El formato del total no es válido. Verifique los datos ingresados.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //            }
+        //            string abonoEfectivo = string.IsNullOrWhiteSpace(txtAbona.Text) ? "0" : txtAbona.Text;
+        //            string abonoTransferencia = string.IsNullOrWhiteSpace(txtAbonaTransferencia.Text) ? "0" : txtAbonaTransferencia.Text;
+
+        //            decimal abonoEfectivoDecimal = decimal.Parse(abonoEfectivo, cultureColombia);
+        //            decimal abonoTransferenciaDecimal = decimal.Parse(abonoTransferencia, cultureColombia);
+        //            decimal totalAbono = abonoEfectivoDecimal + abonoTransferenciaDecimal;
+
+        //            string fechaActual = DateTime.Now.ToString("yyyyMMdd");
+
+        //            // 1. Generar el consecutivo para la nueva venta
+        //            string nuevoConsecutivo = GenerarConsecutivo(fechaActual);
+
+        //            // 2. Registrar la venta
+        //            int ventaId = RegistrarVenta(nuevoConsecutivo, txtCliente.Text, totalCompra, totalAbono);
+
+        //            // 3. Registrar movimientos de pago
+        //            if (abonoEfectivoDecimal > 0)
+        //            {
+        //                RegistrarMovimientoVenta(ventaId, "Efectivo", abonoEfectivoDecimal);
+        //            }
+        //            if (abonoTransferenciaDecimal > 0)
+        //            {
+        //                RegistrarMovimientoVenta(ventaId, "Transferencia", abonoTransferenciaDecimal);
+        //            }
+
+        //            // 4. Aplicar el abono a la deuda existente
+        //            AplicarAbonosPrevios(txtCliente.Text, totalAbono - totalCompra);
+
+        //            // 5. Actualizar saldo del cliente
+        //            ActualizarSaldoCliente(txtCliente.Text);
+
+        //            MessageBox.Show("Venta registrada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            MessageBox.Show("Error al registrar la venta: " + ex.Message);
+        //        }
+        //        finally
+        //        {
+        //            connection.Close();
+        //            LimpiarCampos();
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show("Error en la conexión: " + ex.Message);
+        //    }
+        //}
+
+        //private string GenerarConsecutivo(string fechaActual)
+        //{
+        //    string nuevoConsecutivo = "";
+        //    int nuevoNumero = 1;
+
+        //    string lastConsecutivoQuery = "SELECT TOP 1 consecutivo FROM Ventas WHERE consecutivo LIKE ? ORDER BY consecutivo DESC";
+        //    using (var command = new OleDbCommand(lastConsecutivoQuery, connection))
+        //    {
+        //        command.Parameters.AddWithValue("?", fechaActual + "%");
+        //        object result = command.ExecuteScalar();
+
+        //        if (result != null)
+        //        {
+        //            string lastConsecutivo = result.ToString();
+        //            if (lastConsecutivo.Length > 8)
+        //            {
+        //                string lastNumberStr = lastConsecutivo.Substring(8);
+        //                if (int.TryParse(lastNumberStr, out int lastNumber))
+        //                {
+        //                    nuevoNumero = lastNumber + 1;
+        //                }
+        //            }
+        //        }
+        //    }
+
+        //    nuevoConsecutivo = fechaActual + nuevoNumero.ToString("D5");
+        //    return nuevoConsecutivo;
+        //}
+
+        //private int RegistrarVenta(string consecutivo, string cliente, decimal totalCompra, decimal totalAbono)
+        //{
+        //    string insertVentaQuery = "INSERT INTO Ventas (consecutivo, nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalabona, totalpagar, fecha) " +
+        //                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        //    using (OleDbCommand ventaCommand = new OleDbCommand(insertVentaQuery, connection))
+        //    {
+        //        ventaCommand.Parameters.AddWithValue("consecutivo", consecutivo);
+        //        ventaCommand.Parameters.AddWithValue("@nombreCliente", cliente);
+        //        ventaCommand.Parameters.AddWithValue("@totalproductos", 0);
+        //        ventaCommand.Parameters.AddWithValue("@totalcanastas", 0);
+        //        ventaCommand.Parameters.AddWithValue("@totalpesobruto", 0);
+        //        ventaCommand.Parameters.AddWithValue("@totalcompra", totalCompra);
+        //        ventaCommand.Parameters.AddWithValue("@descuento", 0);
+        //        ventaCommand.Parameters.AddWithValue("@totalabona", totalAbono);
+        //        ventaCommand.Parameters.AddWithValue("@totalpagar", totalCompra - totalAbono);
+        //        ventaCommand.Parameters.AddWithValue("@fecha", DateTime.Now.Date);
+
+        //        ventaCommand.ExecuteNonQuery();
+
+        //        ventaCommand.CommandText = "SELECT @@IDENTITY";
+        //        return Convert.ToInt32(ventaCommand.ExecuteScalar());
+        //    }
+        //}
+
+        //private void RegistrarMovimientoVenta(int ventaId, string tipoPago, decimal valorAbono)
+        //{
+        //    string insertAbonoQuery = "INSERT INTO MovimientoVentas (VentaId, TipoPago, ValorAbono, Fecha) " +
+        //                              "VALUES (?, ?, ?, ?)";
+        //    using (OleDbCommand command = new OleDbCommand(insertAbonoQuery, connection))
+        //    {
+        //        command.Parameters.AddWithValue("@VentaId", ventaId);
+        //        command.Parameters.AddWithValue("@TipoPago", tipoPago);
+        //        command.Parameters.AddWithValue("@ValorAbono", valorAbono);
+        //        command.Parameters.AddWithValue("@Fecha", DateTime.Now.Date);
+
+        //        command.ExecuteNonQuery();
+        //    }
+        //}
+
+        //private void AplicarAbonosPrevios(string cliente, decimal abonoRestante)
+        //{
+        //    if (abonoRestante <= 0) return;
+
+        //    string selectVentasPendientes = "SELECT VentaId, totalpagar FROM Ventas WHERE nombreCliente = ? AND totalpagar > 0 ORDER BY fecha ASC";
+        //    using (OleDbCommand selectCommand = new OleDbCommand(selectVentasPendientes, connection))
+        //    {
+        //        selectCommand.Parameters.AddWithValue("@nombreCliente", cliente);
+        //        using (var reader = selectCommand.ExecuteReader())
+        //        {
+        //            while (reader.Read() && abonoRestante > 0)
+        //            {
+        //                int ventaId = reader.GetInt32(0);
+        //                decimal totalPagar = reader.GetDecimal(1);
+
+        //                decimal abonoAplicado = Math.Min(abonoRestante, totalPagar);
+        //                abonoRestante -= abonoAplicado;
+
+        //                string updateVenta = "UPDATE Ventas SET totalpagar = totalpagar - ? WHERE VentaId = ?";
+        //                using (OleDbCommand updateCommand = new OleDbCommand(updateVenta, connection))
+        //                {
+        //                    updateCommand.Parameters.AddWithValue("@abonoAplicado", abonoAplicado);
+        //                    updateCommand.Parameters.AddWithValue("@VentaId", ventaId);
+        //                    updateCommand.ExecuteNonQuery();
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
+
+        //private void ActualizarSaldoCliente(string cliente)
+        //{
+        //    string queryTotalDeuda = "SELECT SUM(totalpagar) FROM Ventas WHERE nombreCliente = ?";
+        //    decimal saldoActual = 0;
+
+        //    using (OleDbCommand command = new OleDbCommand(queryTotalDeuda, connection))
+        //    {
+        //        command.Parameters.AddWithValue("@nombreCliente", cliente);
+        //        object result = command.ExecuteScalar();
+        //        if (result != DBNull.Value && result != null)
+        //        {
+        //            saldoActual = Convert.ToDecimal(result);
+        //        }
+        //    }
+
+        //    string updateSaldoQuery = "UPDATE Clientes SET SaldoDeuda = ? WHERE nombreCliente = ?";
+        //    using (OleDbCommand updateCommand = new OleDbCommand(updateSaldoQuery, connection))
+        //    {
+        //        updateCommand.Parameters.AddWithValue("@SaldoDeuda", saldoActual);
+        //        updateCommand.Parameters.AddWithValue("@nombreCliente", cliente);
+
+        //        updateCommand.ExecuteNonQuery();
+        //    }
+        //}
 
     }
 }
