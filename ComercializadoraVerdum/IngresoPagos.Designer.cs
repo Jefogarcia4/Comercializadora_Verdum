@@ -50,16 +50,16 @@
             this.grbIngresoPagos.Controls.Add(this.txtefectivo);
             this.grbIngresoPagos.Location = new System.Drawing.Point(12, 89);
             this.grbIngresoPagos.Name = "grbIngresoPagos";
-            this.grbIngresoPagos.Size = new System.Drawing.Size(257, 99);
+            this.grbIngresoPagos.Size = new System.Drawing.Size(257, 105);
             this.grbIngresoPagos.TabIndex = 0;
             this.grbIngresoPagos.TabStop = false;
             // 
             // btnIngresoPagos
             // 
             this.btnIngresoPagos.Enabled = false;
-            this.btnIngresoPagos.Location = new System.Drawing.Point(10, 62);
+            this.btnIngresoPagos.Location = new System.Drawing.Point(6, 62);
             this.btnIngresoPagos.Name = "btnIngresoPagos";
-            this.btnIngresoPagos.Size = new System.Drawing.Size(237, 23);
+            this.btnIngresoPagos.Size = new System.Drawing.Size(241, 27);
             this.btnIngresoPagos.TabIndex = 4;
             this.btnIngresoPagos.Text = "Guardar";
             this.btnIngresoPagos.UseVisualStyleBackColor = true;
@@ -154,6 +154,7 @@
             this.Controls.Add(this.grbIngresoPagos);
             this.Name = "IngresoPagos";
             this.Text = "Saldar Deuda";
+            this.Load += new System.EventHandler(this.IngresoPagos_Load);
             this.grbIngresoPagos.ResumeLayout(false);
             this.grbIngresoPagos.PerformLayout();
             this.ResumeLayout(false);

@@ -140,5 +140,10 @@ namespace ComercializadoraVerdum
                 btnIngresoPagos.Enabled = false;
             }
         }
+
+        private void IngresoPagos_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

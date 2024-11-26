@@ -103,7 +103,7 @@ namespace ComercializadoraVerdum
 
             LoadData();
         }
-        private decimal ObtenerSaldoDeuda(string nombreCliente)
+        private decimal ObtenerSaldoDeuda(int ventaId)
         {
             decimal saldoDeuda = 0;
             try
@@ -112,10 +112,10 @@ namespace ComercializadoraVerdum
                 using (var connection = new OleDbConnection(connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT SaldoDeuda FROM Clientes WHERE NombreCliente = ?";
+                    string query = "SELECT TotalDeuda FROM Ventas WHERE VentaId = ?";
                     using (var command = new OleDbCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("?", nombreCliente);
+                        command.Parameters.AddWithValue("?", ventaId);
                         saldoDeuda = (decimal)command.ExecuteScalar();
                     }
                 }
@@ -266,8 +266,8 @@ namespace ComercializadoraVerdum
                     DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
                     int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
                     string nombreCliente = row.Cells["NombreCliente"].Value.ToString();
-                    string totalPago = row.Cells["TotalDeuda"].Value.ToString();
-                    SaldarDeuda(nombreCliente, ventaId, totalPago);
+                    string totalAbona = row.Cells["TotalAbona"].Value.ToString();
+                    SaldarDeuda(nombreCliente, ventaId, totalAbona);
                 }
             }
         }
@@ -275,17 +275,17 @@ namespace ComercializadoraVerdum
         {
             var colombianCulture = new CultureInfo("es-CO");
 
-            decimal saldoDeuda = ObtenerSaldoDeuda(nombreCliente);
+            decimal saldoDeuda = ObtenerSaldoDeuda(ventaId);
 
             if (saldoDeuda <= 0)
             {
-                MessageBox.Show($"El cliente: {nombreCliente} se encuentra al día. No tiene deuda pendiente.", "Sin Pendientes", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"El cliente: {nombreCliente} no presenta saldo pendiente en esta Venta.", "Validación Saldo Pendiente", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
                 string saldoPendiente = saldoDeuda.ToString("N2", colombianCulture);
                 DialogResult result = MessageBox.Show(
-                    $"Valor de la deuda: ${saldoPendiente}. Nombre Cliente: {nombreCliente}. ¿Deseas saldar la deuda pendiente?",
+                    $"Valor de la deuda: ${saldoPendiente}. Nombre Cliente: {nombreCliente}. ¿Deseas saldar la deuda pendiente de esta Venta?",
                     "Saldar Deuda",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question);
@@ -319,10 +319,10 @@ namespace ComercializadoraVerdum
                 using (var connection = new OleDbConnection(connectionString))
                 {
                     connection.Open();
-                    string query = "UPDATE Clientes SET SaldoDeuda = ? WHERE NombreCliente = ?";
+                    string query = "UPDATE Clientes SET SaldoDeuda = (SaldoDeuda - ?) WHERE NombreCliente = ?";
                     using (var command = new OleDbCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("?", saldo_resta);
+                        command.Parameters.AddWithValue("?", ingreso_total);
                         command.Parameters.AddWithValue("?", nombreCliente);
                         int rowsAffected = command.ExecuteNonQuery();
 
@@ -336,10 +336,27 @@ namespace ComercializadoraVerdum
                         }
                     }
 
-                    string query2 = "UPDATE Ventas SET TotalPagar = ? WHERE VentaId = ?";
+                    string query2 = "UPDATE Ventas SET TotalDeuda = (TotalDeuda - ?) WHERE ventaId = ?";
                     using (var command = new OleDbCommand(query2, connection))
                     {
-                        command.Parameters.AddWithValue("?", total_pagar);
+                        command.Parameters.AddWithValue("?", saldo_resta);
+                        command.Parameters.AddWithValue("?", ventaId);
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
+                        {
+                            //MessageBox.Show($"La deuda de {nombreCliente} ha sido saldada exitosamente.");
+                        }
+                        else
+                        {
+                            //MessageBox.Show("Error al saldar la deuda. Por favor, intenta nuevamente.", "Advertencia!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+
+                    string query3 = "UPDATE Ventas SET TotalAbona = (TotalAbona + ?) WHERE VentaId = ?";
+                    using (var command = new OleDbCommand(query3, connection))
+                    {
+                        command.Parameters.AddWithValue("?", ingreso_total);
                         command.Parameters.AddWithValue("?", ventaId);
                         int rowsAffected = command.ExecuteNonQuery();
 
