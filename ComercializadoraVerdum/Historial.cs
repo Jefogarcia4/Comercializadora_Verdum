@@ -339,7 +339,7 @@ namespace ComercializadoraVerdum
                     string query2 = "UPDATE Ventas SET TotalDeuda = (TotalDeuda - ?) WHERE ventaId = ?";
                     using (var command = new OleDbCommand(query2, connection))
                     {
-                        command.Parameters.AddWithValue("?", saldo_resta);
+                        command.Parameters.AddWithValue("?", ingreso_total);
                         command.Parameters.AddWithValue("?", ventaId);
                         int rowsAffected = command.ExecuteNonQuery();
 
