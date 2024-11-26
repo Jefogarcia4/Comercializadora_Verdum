@@ -106,10 +106,6 @@ namespace ComercializadoraVerdum
             }
         }
 
-
-
-
-
         private void ActualizarResumenVentaLabel()
         {
             StringBuilder resumenVenta = new StringBuilder();
@@ -428,22 +424,6 @@ namespace ComercializadoraVerdum
             // Muestra el total formateado con la cultura colombiana
             label3.Text = $"Total: {totalSum.ToString("N2", culturaColombiana)}";
         }
-        private decimal ObtenerSaldoFavor(string nombreCliente)
-        {
-            decimal saldofavor = 0;
-            string query = "SELECT SaldoFavor FROM Clientes WHERE NombreCliente = @NombreCliente";
-            using (OleDbCommand command = new OleDbCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@NombreCliente", nombreCliente);
-                object result = command.ExecuteScalar();
-                if (result != null && result != DBNull.Value)
-                {
-                    saldofavor = Convert.ToDecimal(result);
-                }
-            }
-            return saldofavor;
-        }
-
         private decimal ObtenerSaldoEnContra(string nombreCliente)
         {
             decimal saldoEnContra = 0;
@@ -461,58 +441,40 @@ namespace ComercializadoraVerdum
             return saldoEnContra;
         }
 
-        private void ActualizarSaldoClienteEnContra(string nombreCliente, decimal valorcomprahoy, decimal saldopendiente, decimal abona)
+        private void ActualizarSaldoClienteEnContra(string nombreCliente, decimal deudaHoy, decimal abonaHoy)
         {
-
             if (connection.State != System.Data.ConnectionState.Open)
             {
                 connection.Open();
             }
+
             try
             {
-                decimal saldoFavor = 0;
-                decimal saldoEnContra = 0;
+                // Obtener el total de deudas acumuladas en la tabla Ventas
+                string sumaDeudasQuery = "SELECT SUM(TotalDeuda) FROM Ventas WHERE NombreCliente = @nombreCliente";
+                decimal sumaDeudas = 0;
 
-                string query = "SELECT SaldoFavor, SaldoDeuda FROM Clientes WHERE NombreCliente = @nombreCliente";
-                using (OleDbCommand command = new OleDbCommand(query, connection))
+                using (OleDbCommand command = new OleDbCommand(sumaDeudasQuery, connection))
                 {
                     command.Parameters.AddWithValue("@nombreCliente", nombreCliente);
 
-                    using (OleDbDataReader reader = command.ExecuteReader())
+                    object result = command.ExecuteScalar();
+                    if (result != DBNull.Value)
                     {
-                        if (reader.Read())
-                        {
-                            saldoFavor = reader.GetDecimal(0);
-                            saldoEnContra = reader.GetDecimal(1);
-                        }
+                        sumaDeudas = Convert.ToDecimal(result);
                     }
                 }
 
-                decimal nuevoSaldoDeuda = saldopendiente;
+                decimal totalDeudas = sumaDeudas + deudaHoy;
 
-                if (saldoFavor > 0)
+                // Actualizar la tabla Clientes con la suma de las deudas acumuladas
+                string actualizarClienteQuery = "UPDATE Clientes SET SaldoDeuda = @saldoDeuda WHERE NombreCliente = @nombreCliente";
+                using (OleDbCommand updateCommand = new OleDbCommand(actualizarClienteQuery, connection))
                 {
-                    if (saldoFavor >= saldopendiente)
-                    {
-                        saldoFavor -= nuevoSaldoDeuda;
-                        nuevoSaldoDeuda = 0;
-                    }
-                    else
-                    {
-                        nuevoSaldoDeuda -= saldoFavor;
-                        saldoFavor = 0;
-                    }
-                }
-
-                string updateQuery = "UPDATE Clientes SET SaldoFavor = @nuevoSaldoFavor, SaldoDeuda = @nuevoSaldoDeuda WHERE NombreCliente = @nombreCliente";
-                using (OleDbCommand updateCommand = new OleDbCommand(updateQuery, connection))
-                {
-                    updateCommand.Parameters.AddWithValue("@nuevoSaldoFavor", saldoFavor);
-                    updateCommand.Parameters.AddWithValue("@nuevoSaldoDeuda", nuevoSaldoDeuda);
+                    updateCommand.Parameters.AddWithValue("@saldoDeuda", totalDeudas);
                     updateCommand.Parameters.AddWithValue("@nombreCliente", nombreCliente);
 
                     int rowsAffected = updateCommand.ExecuteNonQuery();
-
                     if (rowsAffected > 0)
                     {
                         //MessageBox.Show("El saldo del cliente ha sido actualizado correctamente.", "Actualizado!", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -526,9 +488,9 @@ namespace ComercializadoraVerdum
             catch (Exception ex)
             {
                 MessageBox.Show("Error al actualizar la base de datos: " + ex.Message);
-                Application.Exit();
             }
         }
+
         private void ActualizarSaldoClienteAFavor(string nombreCliente, decimal valorcomprahoy, decimal saldopendiente, decimal abona)
         {
 
@@ -632,7 +594,8 @@ namespace ComercializadoraVerdum
             txtCliente.Enabled = false;
             btnLimpiar.Visible = true;
             dataGridView1.Enabled = true;
-            ValidarCliente(txtCliente.Text);
+            //Pendiente revisar con que fin se utiliza
+            //ValidarCliente(txtCliente.Text);
         }
         private void btnLimpiar_Click(object sender, EventArgs e)
         {
@@ -658,7 +621,7 @@ namespace ComercializadoraVerdum
                     connection.Open();
                 }
 
-                string query = "SELECT SaldoFavor, SaldoDeuda FROM clientes WHERE NombreCliente = @NombreCliente";
+                string query = "SELECT SaldoDeuda FROM clientes WHERE NombreCliente = @NombreCliente";
                 using (OleDbCommand command = new OleDbCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@NombreCliente", nombreCliente);
@@ -667,13 +630,9 @@ namespace ComercializadoraVerdum
                     {
                         if (reader.Read())
                         {
-                            decimal saldoFavor = reader.GetDecimal(0);
+                            //decimal saldoFavor = reader.GetDecimal(0);
                             decimal saldoDeuda = reader.GetDecimal(1);
-                            if (saldoFavor != 0)
-                            {
-                                valorMostrar = saldoFavor;
-                            }
-                            else if (saldoDeuda != 0)
+                            if (saldoDeuda != 0)
                             {
                                 valorMostrar = -saldoDeuda;
                             }
@@ -703,7 +662,7 @@ namespace ComercializadoraVerdum
         {
             try
             {
-                string insertQuery = "INSERT INTO Clientes (NombreCliente, SaldoFavor, SaldoDeuda) VALUES (@NombreCliente, 0, 0)";
+                string insertQuery = "INSERT INTO Clientes (NombreCliente, SaldoDeuda) VALUES (@NombreCliente,, 0)";
                 using (OleDbCommand command = new OleDbCommand(insertQuery, connection))
                 {
                     command.Parameters.AddWithValue("@NombreCliente", nombreCliente);
@@ -967,6 +926,7 @@ namespace ComercializadoraVerdum
                     decimal abono = 0;
                     string cliente = txtCliente.Text;
                     decimal cambio = 0;
+                    decimal deuda = 0;
                     // Conversión de texto a número
                     string valor1Texto = label3.Text.Replace("Total:$", "");
                     string reemplazovalor1Texto = valor1Texto.Replace("Total: ", "").Replace(".", "").Replace(",", "");
@@ -1008,7 +968,7 @@ namespace ComercializadoraVerdum
                     string sumaPagosTexto = sumaPagos.ToString("N0", cultureColombia);
 
 
-                    decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
+                    //decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
                     decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
 
                     if (decimal.TryParse(numero.ToString(), NumberStyles.Any, cultureColombia, out decimal totalValorCompra) &&
@@ -1026,9 +986,9 @@ namespace ComercializadoraVerdum
                         }
                         else
                         {
-                            decimal deuda = totalValorCompra - abono;
+                            deuda = totalValorCompra - abono;
                             MessageBox.Show($"El cliente queda debiendo: {deuda.ToString("C", cultureColombia)}", "Pendiente por Pagar", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            ActualizarSaldoClienteEnContra(txtCliente.Text, totalValorCompra, deuda, abono);
+                            ActualizarSaldoClienteEnContra(txtCliente.Text, deuda, abono);
                         }
                     }
 
@@ -1060,8 +1020,8 @@ namespace ComercializadoraVerdum
 
 
                     int ventaId;
-                    string insertVentaQuery = "INSERT INTO Ventas (consecutivo, nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, descuento, totalabona, totalpagar, fecha) " +
-                                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
+                    string insertVentaQuery = "INSERT INTO Ventas (consecutivo, nombreCliente, totalproductos, totalcanastas, totalpesobruto, totalcompra, totalabona, totaldeuda, fecha) " +
+                                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     using (OleDbCommand ventaCommand = new OleDbCommand(insertVentaQuery, connection))
                     {
                         ventaCommand.Parameters.AddWithValue("consecutivo", nuevoConsecutivo);
@@ -1070,9 +1030,8 @@ namespace ComercializadoraVerdum
                         ventaCommand.Parameters.AddWithValue("@totalcanastas", 0);
                         ventaCommand.Parameters.AddWithValue("@totalpesobruto", 0);
                         ventaCommand.Parameters.AddWithValue("@totalcompra", totalValorCompra);
-                        ventaCommand.Parameters.AddWithValue("@descuento", 0);
-                        ventaCommand.Parameters.AddWithValue("@totalabona", 0);
-                        ventaCommand.Parameters.AddWithValue("@totalpagar", abono);
+                        ventaCommand.Parameters.AddWithValue("@totalabona", abono);
+                        ventaCommand.Parameters.AddWithValue("@totaldeuda", deuda);
                         ventaCommand.Parameters.AddWithValue("@fecha", DateTime.Now.Date);
 
                         ventaCommand.ExecuteNonQuery();
@@ -1257,9 +1216,9 @@ namespace ComercializadoraVerdum
 
                 // Obtener las deudas del cliente ordenadas por fecha (más antiguas primero)
                 string obtenerDeudasQuery = @"
-                SELECT VentaId, TotalCompra, TotalPagar, (TotalCompra - TotalPagar) AS DeudaPendiente 
+                SELECT VentaId, TotalCompra, TotalAbona, TotalDeuda AS DeudaPendiente 
                 FROM Ventas 
-                WHERE NombreCliente = ? AND (TotalCompra - TotalPagar) > 0 
+                WHERE NombreCliente = ? AND TotalDeuda > 0 
                 ORDER BY Fecha ASC";
 
                 List<(int VentaId, decimal DeudaPendiente)> deudas = new List<(int, decimal)>();
@@ -1289,8 +1248,17 @@ namespace ComercializadoraVerdum
                     montoRestante -= abonoAplicado;
 
                     // Actualizar el registro de la deuda
-                    string actualizarDeudaQuery = "UPDATE Ventas SET TotalPagar = TotalPagar + ? WHERE VentaId = ?";
+                    string actualizarDeudaQuery = "UPDATE Ventas SET TotalAbona = TotalAbona + ? WHERE VentaId = ?";
                     using (var updateCommand = new OleDbCommand(actualizarDeudaQuery, connection))
+                    {
+                        updateCommand.Parameters.AddWithValue("?", abonoAplicado);
+                        updateCommand.Parameters.AddWithValue("?", ventaId);
+                        updateCommand.ExecuteNonQuery();
+                    }
+
+                    // Actualizar el valor total de la deuda
+                    string actualizarDeudaPendienteQuery = "UPDATE Ventas SET TotalDeuda = (TotalDeuda - ?) WHERE VentaId = ?";
+                    using (var updateCommand = new OleDbCommand(actualizarDeudaPendienteQuery, connection))
                     {
                         updateCommand.Parameters.AddWithValue("?", abonoAplicado);
                         updateCommand.Parameters.AddWithValue("?", ventaId);
@@ -1329,7 +1297,7 @@ namespace ComercializadoraVerdum
                 string verificarDeudasQuery = @"
                 SELECT COUNT(*) 
                 FROM Ventas 
-                WHERE NombreCliente = ? AND (TotalCompra - TotalPagar) > 0";
+                WHERE NombreCliente = ? AND TotalDeuda > 0";
 
                 int deudasPendientes = 0;
                 using (var command = new OleDbCommand(verificarDeudasQuery, connection))

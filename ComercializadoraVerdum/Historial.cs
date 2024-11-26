@@ -39,7 +39,6 @@ namespace ComercializadoraVerdum
 
         private void InitializeDatabaseConnection()
         {
-
             var builder = new ConfigurationBuilder()
                        .SetBasePath(Directory.GetCurrentDirectory())
                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
@@ -59,8 +58,8 @@ namespace ComercializadoraVerdum
             dataGridView1.Columns.Add("TotalCanastas", "Total Canastas");
             dataGridView1.Columns.Add("TotalPesoBruto", "Total Peso Bruto");
             dataGridView1.Columns.Add("TotalCompra", "Total Compra");
-            dataGridView1.Columns.Add("TotalPagar", "Total Pagado");
-            dataGridView1.Columns.Add("SaldoDeuda", "Saldo Deuda");
+            dataGridView1.Columns.Add("TotalAbona", "Total Pagado");
+            dataGridView1.Columns.Add("TotalDeuda", "Saldo Deuda");
             DataGridViewButtonColumn printButtonColumn = new DataGridViewButtonColumn
             {
                 Name = "Imprimir",
@@ -104,7 +103,6 @@ namespace ComercializadoraVerdum
 
             LoadData();
         }
-        
         private decimal ObtenerSaldoDeuda(string nombreCliente)
         {
             decimal saldoDeuda = 0;
@@ -138,11 +136,9 @@ namespace ComercializadoraVerdum
 
                 // Consulta SQL con JOIN para obtener el saldo de deuda
                 string query = @"
-                SELECT V.VentaId, V.Fecha, V.Consecutivo, C.NombreCliente, V.TotalCanastas, 
-                        V.TotalPesoBruto, V.TotalCompra, V.TotalPagar, C.SaldoDeuda
+                SELECT V.VentaId, V.Fecha, V.Consecutivo, V.NombreCliente, V.TotalCanastas, 
+                        V.TotalPesoBruto, V.TotalCompra, V.TotalAbona, V.TotalDeuda
                     FROM Ventas V
-                    LEFT JOIN Clientes C 
-                        ON CStr(V.NombreCliente) = CStr(C.NombreCliente)
                     ORDER BY V.VentaId ASC;
                     ";
 
@@ -162,9 +158,9 @@ namespace ComercializadoraVerdum
                 {
                     string totalPesoBruto = row["TotalPesoBruto"] != DBNull.Value ? Convert.ToDecimal(row["TotalPesoBruto"]).ToString("N2", colombianCulture) : "0";
                     string totalCompra = row["TotalCompra"] != DBNull.Value ? Convert.ToDecimal(row["TotalCompra"]).ToString("N2", colombianCulture) : "0";
-                    string totalPagar = row["TotalPagar"] != DBNull.Value ? Convert.ToDecimal(row["TotalPagar"]).ToString("N2", colombianCulture) : "0";
-                    string saldoDeuda = row["SaldoDeuda"] != DBNull.Value ? Convert.ToDecimal(row["SaldoDeuda"]).ToString("N2", colombianCulture) : "0";
-                    Console.WriteLine($"Saldo Deuda: {saldoDeuda}");
+                    string totalAbona = row["TotalAbona"] != DBNull.Value ? Convert.ToDecimal(row["TotalAbona"]).ToString("N2", colombianCulture) : "0";
+                    string saldoDeuda = row["TotalDeuda"] != DBNull.Value ? Convert.ToDecimal(row["TotalDeuda"]).ToString("N2", colombianCulture) : "0";
+                    
 
                     dataGridView1.Rows.Add(
                         row["VentaId"] != DBNull.Value ? Convert.ToInt32(row["VentaId"]) : 0,
@@ -174,7 +170,7 @@ namespace ComercializadoraVerdum
                         row["TotalCanastas"] != DBNull.Value ? row["TotalCanastas"].ToString() : "0",
                         totalPesoBruto,
                         totalCompra,
-                        totalPagar,
+                        totalAbona,
                         saldoDeuda 
                     );
                 }
@@ -188,7 +184,6 @@ namespace ComercializadoraVerdum
                 connection.Close();
             }
         }
-
         private void BtnFiltrar_Click(object sender, EventArgs e)
         {
             if (datePickerStart.Value == null && string.IsNullOrWhiteSpace(txtCliente.Text))
@@ -271,7 +266,7 @@ namespace ComercializadoraVerdum
                     DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
                     int ventaId = Convert.ToInt32(row.Cells["VentaId"].Value);
                     string nombreCliente = row.Cells["NombreCliente"].Value.ToString();
-                    string totalPago = row.Cells["TotalPagar"].Value.ToString();
+                    string totalPago = row.Cells["TotalDeuda"].Value.ToString();
                     SaldarDeuda(nombreCliente, ventaId, totalPago);
                 }
             }
@@ -491,7 +486,7 @@ namespace ComercializadoraVerdum
             string connectionString = configuration.GetConnectionString("DefaultConnection");
 
             string query = @"
-            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.Canastas, dv.PesoBruto, dv.Cantidad, dv.ValorTotal, cl.SaldoFavor, cl.SaldoDeuda
+            SELECT dv.DetalleVentaId, p.Nombre, dv.Precio, dv.Canastas, dv.PesoBruto, dv.Cantidad, dv.ValorTotal, cl.SaldoDeuda
             FROM ((DetalleVentas dv
             INNER JOIN Productos p ON dv.ProductoId = p.Id)
             INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
@@ -651,13 +646,11 @@ namespace ComercializadoraVerdum
         {
            
         }
-
         private void btnReporteMovimientos_Click(object sender, EventArgs e)
         {
             ReporteMovimientos formInformeMovimientos = new ReporteMovimientos();
             formInformeMovimientos.Show();
         }
-
         private void PrintDocument_BeginPrint(object sender, PrintEventArgs e)
         {
             PrintDocument printDocument = (PrintDocument)sender;
