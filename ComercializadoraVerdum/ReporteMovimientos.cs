@@ -28,6 +28,11 @@ namespace ComercializadoraVerdum
             ToolTip toolTip = new ToolTip();
             toolTip.SetToolTip(btnVolverAnt, "Cerrar y volver al formulario anterior");
             toolTip.SetToolTip(btnRefrescarMovimientos, "Refrescar información");
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ReporteMovimientos_FormClosing);
+        }
+        private void ReporteMovimientos_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Application.Exit();
         }
         private void InitializeDatabaseConnection()
         {
@@ -157,6 +162,7 @@ namespace ComercializadoraVerdum
 
         private void btnVolverAnt_Click(object sender, EventArgs e)
         {
+            Application.Exit();
             this.Close();
         }
     }

@@ -35,6 +35,11 @@ namespace ComercializadoraVerdum
             InitializeDatabaseConnection();
             InitializeDataGridView();
             SetButtonImageFromUrl();
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Historial_FormClosing);
+        }
+        private void Historial_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Application.Exit();
         }
 
         private void InitializeDatabaseConnection()
@@ -657,6 +662,7 @@ namespace ComercializadoraVerdum
         }
         private void btnVolver_Click(object sender, EventArgs e)
         {
+            Application.Exit();
             this.Close();
         }
         private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)

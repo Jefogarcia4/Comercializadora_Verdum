@@ -22,6 +22,11 @@ namespace ComercializadoraVerdum
             InitializeComponent();
             lblDeuda.Text = valorDeuda;
             ValorDeuda = Convert.ToDecimal(valorDeuda);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.IngresoPagos_FormClosing);
+        }
+        private void IngresoPagos_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Application.Exit();
         }
 
         private void btnIngresoPagos_Click(object sender, EventArgs e)

@@ -13,6 +13,9 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Net;
 using System.Globalization;
+using System.Data.Common;
+using System.IO.Pipes;
+using System.Net.Sockets;
 
 
 namespace ComercializadoraVerdum
@@ -45,9 +48,17 @@ namespace ComercializadoraVerdum
             dataGridView1.CellEndEdit += dataGridView1_CellEndEdit;
             dataGridView1.AllowUserToDeleteRows = true;
             _historial = historial;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
 
         }
-
+        private void pruprupru()
+        { 
+        
+        }
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Application.Exit();
+        }
         private void ScrollPanel()
         {
             Panel panel1 = new Panel();
