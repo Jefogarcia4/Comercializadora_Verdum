@@ -13,6 +13,7 @@ using System.IO;
 using System.Net;
 using System.Drawing.Printing;
 using System.Globalization;
+using System.Threading;
 
 namespace ComercializadoraVerdum
 {
@@ -28,6 +29,8 @@ namespace ComercializadoraVerdum
         private int offsetY = 10; 
         private bool isNewPage = true;
         private Dictionary<string, decimal> saldoDeudasCache = new Dictionary<string, decimal>();
+        private CancellationTokenSource _cancellationTokenSource;
+        private Task _backgroundTask;
         public Historial()
         {
             this.Icon = new Icon("Images/verdum-logo-icono.ico");
@@ -35,11 +38,28 @@ namespace ComercializadoraVerdum
             InitializeDatabaseConnection();
             InitializeDataGridView();
             SetButtonImageFromUrl();
+            _cancellationTokenSource = new CancellationTokenSource();
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Historial_FormClosing);
+            FormManager.IncrementOpenForms();
+        }
+        private async void StartBackgroundTask()
+        {
+            _backgroundTask = Task.Run(() =>
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                        break;
+
+                    Thread.Sleep(100);
+                }
+            });
         }
         private void Historial_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            _cancellationTokenSource.Cancel();
+            this.Dispose();
+            FormManager.DecrementOpenForms();
         }
 
         private void InitializeDatabaseConnection()
@@ -650,6 +670,7 @@ namespace ComercializadoraVerdum
         }
         private void Historial_Load(object sender, EventArgs e)
         {
+            StartBackgroundTask();
             this.Size = new Size(1096, 589);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
@@ -662,7 +683,6 @@ namespace ComercializadoraVerdum
         }
         private void btnVolver_Click(object sender, EventArgs e)
         {
-            Application.Exit();
             this.Close();
         }
         private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)

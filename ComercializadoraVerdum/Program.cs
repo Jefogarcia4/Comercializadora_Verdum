@@ -26,8 +26,7 @@ namespace WindowsFormsApp
 
             for (int i = 0; i < numeroInstancias; i++)
             {
-                Historial historial = new Historial();
-                FrmHome frmHome = new FrmHome(historial);
+                FrmHome frmHome = new FrmHome();
                 instanciasFrmHome.Add(frmHome);
                 
                 frmHome.Show();

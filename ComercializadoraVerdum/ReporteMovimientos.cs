@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -19,6 +20,8 @@ namespace ComercializadoraVerdum
         private OleDbConnection connection;
         private IConfigurationRoot configuration;
         private DataTable movimientos;
+        private CancellationTokenSource _cancellationTokenSource;
+        private Task _backgroundTask;
         public ReporteMovimientos()
         {
             this.Icon = new Icon("Images/verdum-logo-icono.ico");
@@ -28,11 +31,28 @@ namespace ComercializadoraVerdum
             ToolTip toolTip = new ToolTip();
             toolTip.SetToolTip(btnVolverAnt, "Cerrar y volver al formulario anterior");
             toolTip.SetToolTip(btnRefrescarMovimientos, "Refrescar información");
+            _cancellationTokenSource = new CancellationTokenSource();
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ReporteMovimientos_FormClosing);
+            FormManager.IncrementOpenForms();
+        }
+        private async void StartBackgroundTask()
+        {
+            _backgroundTask = Task.Run(() =>
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                        break;
+
+                    Thread.Sleep(100);
+                }
+            });
         }
         private void ReporteMovimientos_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            _cancellationTokenSource.Cancel();
+            this.Dispose();
+            FormManager.DecrementOpenForms();
         }
         private void InitializeDatabaseConnection()
         {
@@ -48,6 +68,7 @@ namespace ComercializadoraVerdum
         }
         private void ReporteMovimientos_Load(object sender, EventArgs e)
         {
+            StartBackgroundTask();
             CargarMovimientos();
         }
         public void SetButtonImageFromUrl()
@@ -162,7 +183,6 @@ namespace ComercializadoraVerdum
 
         private void btnVolverAnt_Click(object sender, EventArgs e)
         {
-            Application.Exit();
             this.Close();
         }
     }

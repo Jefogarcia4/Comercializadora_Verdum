@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -16,17 +17,36 @@ namespace ComercializadoraVerdum
         public decimal ValorEfectivo { get; private set; } = 0;
         public decimal ValorTransferencia { get; private set; } = 0;
         public decimal ValorDeuda { get; private set; } = 0;
+        private CancellationTokenSource _cancellationTokenSource;
+        private Task _backgroundTask;
         public IngresoPagos(string valorDeuda)
         {
             this.Icon = new Icon("Images/verdum-logo-icono.ico");
             InitializeComponent();
             lblDeuda.Text = valorDeuda;
             ValorDeuda = Convert.ToDecimal(valorDeuda);
+            _cancellationTokenSource = new CancellationTokenSource();
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.IngresoPagos_FormClosing);
+            FormManager.IncrementOpenForms();
+        }
+        private async void StartBackgroundTask()
+        {
+            _backgroundTask = Task.Run(() =>
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                        break;
+
+                    Thread.Sleep(100);
+                }
+            });
         }
         private void IngresoPagos_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            _cancellationTokenSource.Cancel();
+            this.Dispose();
+            FormManager.DecrementOpenForms();
         }
 
         private void btnIngresoPagos_Click(object sender, EventArgs e)
@@ -148,7 +168,7 @@ namespace ComercializadoraVerdum
 
         private void IngresoPagos_Load(object sender, EventArgs e)
         {
-
+            StartBackgroundTask();
         }
     }
 }

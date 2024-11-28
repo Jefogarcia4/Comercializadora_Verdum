@@ -16,6 +16,9 @@ using System.Globalization;
 using System.Data.Common;
 using System.IO.Pipes;
 using System.Net.Sockets;
+using System.Threading;
+using static ComercializadoraVerdum.Historial;
+using System.Drawing.Printing;
 
 
 namespace ComercializadoraVerdum
@@ -23,15 +26,18 @@ namespace ComercializadoraVerdum
     public partial class FrmHome : Form
     {
         private OleDbConnection connection;
-        private Historial _historial;
         private int consecutivo = 0;
         private DateTime fechaActual;
         private IConfigurationRoot configuration;
         private Dictionary<(string producto, string precio), List<ProductoDetalle>> resumenProductos = new Dictionary<(string producto, string precio), List<ProductoDetalle>>();
+        private CancellationTokenSource _cancellationTokenSource;
+        private Task _backgroundTask;
+        private List<DetalleVenta> _detalleventas;
+        private string _consecutivo, _fecha, _nombreCliente, _totalvalorventa, _totalpeso;
+        private PrintDocument printDocument = new PrintDocument();
+        private PrintPreviewDialog printPreviewDialog = new PrintPreviewDialog();
 
-
-
-        public FrmHome(Historial historial)
+        public FrmHome()
         {
 
             InitializeComponent();
@@ -46,18 +52,33 @@ namespace ComercializadoraVerdum
             this.Icon = new Icon("Images/verdum-logo-icono.ico");
             this.Shown += new EventHandler(FrmHome_Shown);
             dataGridView1.CellEndEdit += dataGridView1_CellEndEdit;
+            printDocument.BeginPrint += new PrintEventHandler(PrintDocument_BeginPrint);
+            printDocument.PrintPage += new PrintPageEventHandler(PrintDocument_PrintPage);
+            printPreviewDialog.Document = printDocument;
             dataGridView1.AllowUserToDeleteRows = true;
-            _historial = historial;
+            _cancellationTokenSource = new CancellationTokenSource();
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
+            FormManager.IncrementOpenForms();
 
         }
-        private void pruprupru()
-        { 
-        
+        private async void StartBackgroundTask()
+        {
+            _backgroundTask = Task.Run(() =>
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                        break;
+
+                    Thread.Sleep(100);
+                }
+            });
         }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            _cancellationTokenSource.Cancel();
+            this.Dispose();
+            FormManager.DecrementOpenForms();
         }
         private void ScrollPanel()
         {
@@ -369,7 +390,7 @@ namespace ComercializadoraVerdum
 
         private void FrmHome_Load(object sender, EventArgs e)
         {
-
+            StartBackgroundTask();
             txtCliente.Focus();
             //this.Size = new Size(820, 600);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -606,7 +627,7 @@ namespace ComercializadoraVerdum
             btnLimpiar.Visible = true;
             dataGridView1.Enabled = true;
             //Pendiente revisar con que fin se utiliza
-            //ValidarCliente(txtCliente.Text);
+            //CrearCliente(txtCliente.Text);
         }
         private void btnLimpiar_Click(object sender, EventArgs e)
         {
@@ -621,36 +642,79 @@ namespace ComercializadoraVerdum
             }
 
         }
-        private void ValidarCliente(string nombreCliente)
-        {
-            decimal valorMostrar = 0;
+        //private void ValidarCliente(string nombreCliente)
+        //{
+        //    decimal valorMostrar = 0;
 
+        //    try
+        //    {
+        //        if (connection.State == ConnectionState.Closed)
+        //        {
+        //            connection.Open();
+        //        }
+
+        //        string query = "SELECT SaldoDeuda FROM clientes WHERE NombreCliente = @NombreCliente";
+        //        using (OleDbCommand command = new OleDbCommand(query, connection))
+        //        {
+        //            command.Parameters.AddWithValue("@NombreCliente", nombreCliente);
+
+        //            using (OleDbDataReader reader = command.ExecuteReader())
+        //            {
+        //                if (reader.Read())
+        //                {
+        //                    //decimal saldoFavor = reader.GetDecimal(0);
+        //                    decimal saldoDeuda = reader.GetDecimal(1);
+        //                    if (saldoDeuda != 0)
+        //                    {
+        //                        valorMostrar = -saldoDeuda;
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    CrearCliente(nombreCliente);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show("Error: " + ex.Message);
+        //    }
+        //    finally
+        //    {
+        //        if (connection.State == ConnectionState.Open)
+        //        {
+        //            connection.Close();
+        //        }
+        //    }
+
+        //    //lblDescuento.Text = $"Descuento: $ {valorMostrar.ToString("N0")}";
+        //}
+        private void ValidarExistenciaCliente(string nombreCliente)
+        {
             try
             {
-                if (connection.State == ConnectionState.Closed)
-                {
-                    connection.Open();
-                }
+                string checkQuery = "SELECT COUNT(*) FROM Clientes WHERE NombreCliente = @NombreCliente";
 
-                string query = "SELECT SaldoDeuda FROM clientes WHERE NombreCliente = @NombreCliente";
-                using (OleDbCommand command = new OleDbCommand(query, connection))
+                using (OleDbCommand checkCommand = new OleDbCommand(checkQuery, connection))
                 {
-                    command.Parameters.AddWithValue("@NombreCliente", nombreCliente);
+                    checkCommand.Parameters.AddWithValue("@NombreCliente", nombreCliente);
 
-                    using (OleDbDataReader reader = command.ExecuteReader())
+                    int count = (int)checkCommand.ExecuteScalar();
+
+                    if (count > 0)
                     {
-                        if (reader.Read())
+                        //MessageBox.Show("El cliente ya existe en la base de datos.");
+                    }
+                    else
+                    {
+                        string insertQuery = "INSERT INTO Clientes (NombreCliente, SaldoDeuda) VALUES (@NombreCliente, 0)";
+
+                        using (OleDbCommand insertCommand = new OleDbCommand(insertQuery, connection))
                         {
-                            //decimal saldoFavor = reader.GetDecimal(0);
-                            decimal saldoDeuda = reader.GetDecimal(1);
-                            if (saldoDeuda != 0)
-                            {
-                                valorMostrar = -saldoDeuda;
-                            }
-                        }
-                        else
-                        {
-                            CrearCliente(nombreCliente);
+                            insertCommand.Parameters.AddWithValue("@NombreCliente", nombreCliente);
+                            insertCommand.ExecuteNonQuery();
+                            //MessageBox.Show("Cliente insertado exitosamente.");
                         }
                     }
                 }
@@ -659,32 +723,8 @@ namespace ComercializadoraVerdum
             {
                 MessageBox.Show("Error: " + ex.Message);
             }
-            finally
-            {
-                if (connection.State == ConnectionState.Open)
-                {
-                    connection.Close();
-                }
-            }
+        }
 
-            //lblDescuento.Text = $"Descuento: $ {valorMostrar.ToString("N0")}";
-        }
-        private void CrearCliente(string nombreCliente)
-        {
-            try
-            {
-                string insertQuery = "INSERT INTO Clientes (NombreCliente, SaldoDeuda) VALUES (@NombreCliente,, 0)";
-                using (OleDbCommand command = new OleDbCommand(insertQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@NombreCliente", nombreCliente);
-                    command.ExecuteNonQuery();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message);
-            }
-        }
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
 
@@ -982,6 +1022,8 @@ namespace ComercializadoraVerdum
                     //decimal saldoFavor = ObtenerSaldoFavor(txtCliente.Text);
                     decimal saldoEnContra = ObtenerSaldoEnContra(txtCliente.Text);
 
+                    ValidarExistenciaCliente(txtCliente.Text);
+
                     if (decimal.TryParse(numero.ToString(), NumberStyles.Any, cultureColombia, out decimal totalValorCompra) &&
                         decimal.TryParse(sumaPagosTexto, NumberStyles.Any, cultureColombia, out abono))
                     {
@@ -1193,7 +1235,7 @@ namespace ComercializadoraVerdum
                     }
 
                     GenerarNuevaFactura();
-                    _historial.ImprimirFacturaCompra(ventaId);
+                    ImprimirFacturaCompra(ventaId);
                     MessageBox.Show("Venta registrada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 }
@@ -1342,6 +1384,169 @@ namespace ComercializadoraVerdum
             {
                 MessageBox.Show("Error al procesar las deudas: " + ex.Message);
             } 
+        }
+        public void ImprimirFacturaCompra(int ventaId)
+        {
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
+            decimal totalVenta = 0;
+            decimal totalPeso = 0;
+            string query = @"
+            SELECT cl.NombreCliente, p.Nombre, dv.Precio, SUM(dv.Cantidad) AS TotalPesoBruto, SUM(dv.ValorTotal) AS TotalValorTotal, v.Consecutivo, v.Fecha 
+            FROM ((DetalleVentas dv
+            INNER JOIN Productos p ON dv.ProductoId = p.Id)
+            INNER JOIN Ventas v ON dv.VentaId = v.VentaId)
+            INNER JOIN Clientes cl ON CStr(v.NombreCliente) = CStr(cl.NombreCliente)
+            WHERE dv.VentaId = ?
+            GROUP BY cl.NombreCliente, p.Nombre, dv.Precio, v.Consecutivo, v.Fecha"
+            ;
+
+            _detalleventas = new List<DetalleVenta>();
+
+            using (OleDbConnection connection = new OleDbConnection(connectionString))
+            {
+                using (OleDbCommand command = new OleDbCommand(query, connection))
+                {
+                    command.Parameters.Add("?", OleDbType.Integer).Value = ventaId;
+
+                    try
+                    {
+                        connection.Open();
+                        using (OleDbDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+
+                                var detalle = new DetalleVenta();
+                                detalle.Nombre = reader.GetString(1);
+                                detalle.Precio = Convert.ToDecimal(reader["Precio"]); // Conversión manual a decimal
+                                detalle.PesoBruto = Convert.ToDecimal(reader["TotalPesoBruto"]); // Conversión a entero para PesoBruto
+                                detalle.ValorTotal = Convert.ToDecimal(reader["TotalValorTotal"]); // Conversión manual a decimal
+                                _consecutivo = Convert.ToString(reader["Consecutivo"]);
+                                _fecha = Convert.ToString(reader["Fecha"]);
+                                _nombreCliente = Convert.ToString(reader["NombreCliente"]);
+
+                                if (DateTime.TryParse(_fecha, out DateTime fechaParsed))
+                                {
+                                    _fecha = fechaParsed.ToString("dd/MM/yyyy"); // Formatea solo la fecha
+                                }
+                                _detalleventas.Add(detalle);
+                                totalVenta += Convert.ToDecimal(detalle.ValorTotal);
+                                totalPeso += detalle.PesoBruto;
+                            }
+                            _totalvalorventa = $"${totalVenta.ToString("N0")}";
+                            _totalpeso = totalPeso.ToString("N1");
+                            printPreviewDialog.ShowDialog();
+                            //printDocument.Print();
+                            //MessageBox.Show("Se Imprimió correctamente la Factura de Venta.", "Exitoso!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            //ImprimirDocumento();
+                            //
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error: {ex.Message}");
+                    }
+                }
+            }
+        }
+        private void PrintDocument_BeginPrint(object sender, PrintEventArgs e)
+        {
+            PrintDocument printDocument = (PrintDocument)sender;
+
+            float widthInInches = 7.2f / 2.54f;
+            float heightInInches = 10.99f / 2.54f;
+            float topeInChes = 20.99f / 2.54f;
+
+            PaperSize customPaperSize = new PaperSize("CustomSize", (int)(widthInInches * 100), (int)(heightInInches * 100));
+            printDocument.DefaultPageSettings.PaperSize = customPaperSize;
+        }
+        private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Font font = new Font("Arial", 9);
+            Brush brush = Brushes.Black;
+            int startX = 10;
+            int startY = 10;
+            int offsetY = 25;
+
+            int pageWidth = e.PageBounds.Width;
+            int pageHeight = e.PageBounds.Height;
+
+            Image logo = Image.FromFile("Images/verdum-logo.png");
+            if (logo != null)
+            {
+                int logoWidth = 80;
+                int logoX = (pageWidth - logoWidth) / 2;
+                g.DrawImage(logo, logoX, startY, logoWidth, 80);
+                offsetY += 60;
+            }
+
+            string prefacturaVenta = "PREFACTURA DE VENTA";
+            float prefacturaVentaWidth = g.MeasureString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold)).Width;
+            float prefacturaVentaX = (pageWidth - prefacturaVentaWidth) / 2;
+            g.DrawString(prefacturaVenta, new Font("Arial", 8, FontStyle.Bold), brush, prefacturaVentaX, startY + offsetY);
+            offsetY += 15;
+
+            string medellinColombia = "MEDELLIN - COLOMBIA";
+            float medellinColombiaWidth = g.MeasureString(medellinColombia, new Font("Arial", 8, FontStyle.Bold)).Width;
+            float medellinColombiaX = (pageWidth - medellinColombiaWidth) / 2;
+            g.DrawString(medellinColombia, new Font("Arial", 8, FontStyle.Bold), brush, medellinColombiaX, startY + offsetY);
+            offsetY += 15;
+
+            string direccion = "DIRECCION: PLAZA MAYORISTA DE ANTIOQUIA";
+            float direccionWidth = g.MeasureString(direccion, new Font("Arial", 8, FontStyle.Bold)).Width;
+            float direccionX = (pageWidth - direccionWidth) / 2;
+            g.DrawString(direccion, new Font("Arial", 8, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            offsetY += 20;
+
+            g.DrawString($"PREFACTURA No: {_consecutivo}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            offsetY += 15;
+
+            g.DrawString($"FECHA: {_fecha}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            offsetY += 20;
+
+            string comercializadoraText = "COMERCIALIZADORA VERDUM SAS";
+            float comercializadoraTextWidth = g.MeasureString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold)).Width;
+            float comercializadoraTextX = (pageWidth - comercializadoraTextWidth) / 2;
+            g.DrawString(comercializadoraText, new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX, startY + offsetY);
+            offsetY += 20;
+
+            g.DrawString($"CLIENTE: {_nombreCliente}", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            offsetY += 15;
+
+            g.DrawString("PRODUCTO", new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            g.DrawString("PESO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 80, startY + offsetY);
+            g.DrawString("PRECIO", new Font("Arial", 9, FontStyle.Bold), brush, startX + 130, startY + offsetY);
+            g.DrawString("VALOR", new Font("Arial", 9, FontStyle.Bold), brush, startX + 200, startY + offsetY);
+            offsetY += 15;
+
+            foreach (var detalle in _detalleventas)
+            {
+                g.DrawString(detalle.Nombre, font, brush, direccionX, startY + offsetY);
+                g.DrawString(detalle.PesoBruto.ToString("N1"), font, brush, startX + 80, startY + offsetY);
+                g.DrawString($"${detalle.Precio.ToString("N0")}", font, brush, startX + 130, startY + offsetY);
+                g.DrawString($"${detalle.ValorTotal.ToString("N0")}", font, brush, startX + 200, startY + offsetY);
+                offsetY += 15;
+
+            }
+            offsetY += 10;
+
+            string totalLabel = "TOTAL VENTA:";
+            g.DrawString(totalLabel, new Font("Arial", 9, FontStyle.Bold), brush, direccionX, startY + offsetY);
+            float totalLabelWidth = g.MeasureString(totalLabel, new Font("Arial", 14, FontStyle.Bold)).Width;
+
+            string totalPesoValue = _totalpeso;
+            string totalVentaText = _totalvalorventa;
+
+            float spaceWidth = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 440;
+            float spaceWidth2 = e.PageBounds.Width - totalLabelWidth - g.MeasureString(totalPesoValue, font).Width - g.MeasureString(totalVentaText, font).Width - 300;
+            g.DrawString(totalPesoValue, font, brush, startX + 95, startY + offsetY);
+            g.DrawString(totalVentaText, font, brush, startX + 170 + g.MeasureString(totalPesoValue, font).Width, startY + offsetY);
+            offsetY += 15;
+
+            g.DrawString($"Fecha Generación Prefactura:", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 20, startY + offsetY);
+            offsetY += 15;
+            g.DrawString($"{DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm")}", new Font("Arial", 9, FontStyle.Bold), brush, comercializadoraTextX + 15, startY + offsetY);
         }
     }
 }
